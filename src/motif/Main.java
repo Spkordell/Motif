@@ -33,40 +33,28 @@ public class Main {
        // frame.pack();
        // frame.setVisible(true);
         
-        
-        
-        /*        
-        String arr[] = {"12341234abc", "1234foo1234", "12121212"};       
-        String regex = "(\\d+?)\\1";
-        Pattern p = Pattern.compile(regex);
-        for (String elem : arr) {
-           Matcher matcher = p.matcher(elem);
-           if (matcher.find())
-              System.out.println(elem + " got repeated: " + matcher.group(1));
-           else
-              System.out.println(elem + " has no repeation");
-        }
-        */    
-    	
-        //String arr[] = {"1 2 3 4 1 2 3 4 1 2 3 4 ", "1 2 1 2 1 2 1 2 ", "1 1 2 1 1 3 1 1 2 1 1 3 1 1 2 "};
+	
+        String arr[] = {"1 2 3 4 1 2 3 4 1 2 3 4 ", "1 2 1 2 1 2 1 2 ", "1 1 2 1 1 3 1 1 2 1 1 3 1 1 2 ", "111 110 2 112 111 110 2 112 "};
         //String arr[] = {"1 2 3 4 1 2 3 4 1 "};
-    	String arr[] = {"1 2 1 3 1 2 1 3 1 "};
         LinkedList<String> patterns;
         for (String elem : arr) {
         	patterns = new LinkedList<String>();
 	        System.out.println("------"+elem+"------");
-        	for (int i = 4; i < elem.length(); i+=2){
-		       String regex = "([\\d\\s]{"+i+"}?).*\\1";
+        	//for (int i = 4; i < elem.length(); i+=2){
+	        for (int i = 2; i < elem.length()/2; i+=1){
+		       //String regex = "([\\d\\s]{"+i+"}?).*\\1";
+        	   String regex = "((\\d+\\s){"+i+"}).*\\1";
 		       Pattern p = Pattern.compile(regex);
 	           Matcher matcher = p.matcher(elem);
 	           if (matcher.find()) {
 	        	  patterns.add(matcher.group(1).trim());
-	           	  //We found one match, let's look for others
-	        	  for(int j = 2; j < elem.length()-i; j+=2) {
-	   		       	  if (matcher.find(j) && !patterns.contains(matcher.group(1).trim())) {
+	        	  int j = 0;
+	        	  do {
+		        	  j = elem.indexOf(' ',++j);
+	        		  if (matcher.find(j) && !patterns.contains(matcher.group(1).trim())) {
 	   		       		  patterns.add(matcher.group(1).trim());
-	   		       	  }
-	        	  }
+	   		       	  }        	  
+	        	  } while (j < elem.length()-i); //todo: this can probably end sooner
 	           } else {
 	        	  //we won't find anymore patterns, leave loop early
 	           	  break;
@@ -81,6 +69,19 @@ public class Main {
         	//make a prediction as to what might come next
      	    //There is probably a better way to do this without using regular expressions
         	//need to iterate over every pattern, and see if the end of the string fits
+     
+     	   /*
+     	  LinkedList<String> predictions = new LinkedList<String>();
+     	  for(String pattern : patterns) {
+     		  for(int i = 2; i < pattern.length(); i+=2){
+     			  if (elem.endsWith(pattern.substring(0,pattern.length()-i))) {
+     				  predictions.add(pattern);
+     				  break;
+     			  }
+     		   }
+     	  }
+     	  */
+     	        	 
         	String regex;
         	Pattern p;
         	Matcher matcher;
@@ -88,10 +89,13 @@ public class Main {
         	for(String pattern : patterns) {
         		regex = "(";
         		for(int i = 2; i < pattern.length(); i+=2){
-        			regex+=pattern.substring(0,pattern.length()-i)+"|";
+        			regex+=pattern.substring(0,pattern.length()-i).trim()+"|";
         		}
-        		regex = regex.substring(0,regex.length()-1) + ")\\s$";
-        		//System.out.println(regex);
+        		if (regex.endsWith("|")) {
+        			regex = regex.substring(0,regex.length()-1);
+        		}
+        		regex += ")\\s$";
+        		System.out.println(regex);
         		p = Pattern.compile(regex);        	        		
         		matcher = p.matcher(elem);
         		if (matcher.find()) {
@@ -106,6 +110,7 @@ public class Main {
                  	}
         		}
         	}
+        	
         	if (predictions.size() == 0) {
         		System.out.println("No predicions");
         	} else {
