@@ -49,8 +49,8 @@ public class Main {
         */    
     	
         //String arr[] = {"1 2 3 4 1 2 3 4 1 2 3 4 ", "1 2 1 2 1 2 1 2 ", "1 1 2 1 1 3 1 1 2 1 1 3 1 1 2 "};
-        String arr[] = {"1 2 3 4 1 2 3 4 1 "};
-    	//String arr[] = {"1 5 4 3 2 4 5 5 4 3 2 5 9 9 4 5 3 8 9 2 1 7 8 0 5 0 4 3 7 5 "};
+        //String arr[] = {"1 2 3 4 1 2 3 4 1 "};
+    	String arr[] = {"1 2 1 3 1 2 1 3 1 "};
         LinkedList<String> patterns;
         for (String elem : arr) {
         	patterns = new LinkedList<String>();
@@ -79,28 +79,40 @@ public class Main {
      	   }
      	   
         	//make a prediction as to what might come next
-        	
+     	    //There is probably a better way to do this without using regular expressions
         	//need to iterate over every pattern, and see if the end of the string fits
         	String regex;
         	Pattern p;
         	Matcher matcher;
+        	LinkedList<String> predictions = new LinkedList<String>();
         	for(String pattern : patterns) {
-        		//regex = "("+pattern.substring(0,pattern.length()-1)+"|"+pattern.substring(0,pattern.length()-2)+")\\s$";
         		regex = "(";
         		for(int i = 2; i < pattern.length(); i+=2){
         			regex+=pattern.substring(0,pattern.length()-i)+"|";
         		}
         		regex = regex.substring(0,regex.length()-1) + ")\\s$";
         		//System.out.println(regex);
-        		p = Pattern.compile(regex);
-        	        		
+        		p = Pattern.compile(regex);        	        		
         		matcher = p.matcher(elem);
         		if (matcher.find()) {
-        			System.out.println("Prediction: "+pattern);
+        			//This pattern matches some part of the end of the input
+
+        			//chop off the portion of the pattern that intersects with the end of the input, leaving just the prediction
+        			int idx = pattern.length();
+                 	while (!elem.endsWith(pattern.substring(0, idx--)));
+                 	String prediction = pattern.substring(idx + 1);
+                 	if (!predictions.contains(prediction)) { //remove repeated predictions
+              	   		predictions.add(prediction);
+                 	}
         		}
         	}
-        	
-        	//Now that we know which patterns match the end of the string, need to produce the next expected value
+        	if (predictions.size() == 0) {
+        		System.out.println("No predicions");
+        	} else {
+	      	   	for(String pattern : predictions){
+	      	   		System.out.println("Prediction: "+pattern);
+	      	   	}
+        	}
         }
         
     	
