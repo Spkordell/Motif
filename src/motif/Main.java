@@ -46,42 +46,10 @@ public class Main {
            else
               System.out.println(elem + " has no repeation");
         }
-        */
+        */    
     	
-    	//String regex = "([\\d\\s]+?)\\1";
-    	//String regex = "([\\d\\s]+?).{"+i+"}\\s\\1";
-/*    	
-        String arr[] = {"1 2 3 4 1 2 3 4 ", "1 2 1 2 1 2 1 2 ", "1 1 2 1 1 3 1 1 2 1 1 2 "};    
-        for (String elem : arr) {
-	        System.out.println("------"+elem+"------");
-        	for (int i = 2; i < elem.length(); i+=2){
-		       String regex = "([\\d\\s]{"+i+"}?).*\\1";
-		       Pattern p = Pattern.compile(regex);
-	           Matcher matcher = p.matcher(elem);
-	           if (matcher.find()) {
-	              System.out.println("Pattern " + i/2 +": " + matcher.group(1));
-	           	  //We found one match, let's look for others
-	              for (int j = 2; j < elem.length(); j+=2) {
-	            	  regex = ".{"+j+"}([\\d\\s]{"+i+"}?).*\\1";
-	   		       	  p = Pattern.compile(regex);
-	   		       	  matcher = p.matcher(elem);
-	   		       	  if (matcher.find()) {
-	   		       		  System.out.println("Pattern+ " + i/2 +": " + matcher.group(1));
-	   		       	  } else {
-	   		       		  break;
-	   		       	  }
-	              }
-	           } else {
-	              System.out.println("No more patterns");
-	           	  break;
-	           }
-	        }
-        }
-        */
-    
-    	
-        //String arr[] = {"1 2 3 4 1 2 3 4 ", "1 2 1 2 1 2 1 2 ", "8 1 1 2 1 1 3 1 1 2 8 1 1 3 "};
-    	String arr[] = {"1 5 4 3 2 4 5 5 4 3  2 5 9 9 4 5 3 8 9 2 1 7 8 0 5 0 4 3 7 5 "};
+        String arr[] = {"1 2 3 4 1 2 3 4 1 2 3 4 ", "1 2 1 2 1 2 1 2 ", "1 1 2 1 1 3 1 1 2 1 1 3 1 1 2 "};
+    	//String arr[] = {"1 5 4 3 2 4 5 5 4 3 2 5 9 9 4 5 3 8 9 2 1 7 8 0 5 0 4 3 7 5 "};
         LinkedList<String> patterns;
         for (String elem : arr) {
         	patterns = new LinkedList<String>();
@@ -93,14 +61,11 @@ public class Main {
 	           if (matcher.find()) {
 	        	  patterns.add(matcher.group(1).trim());
 	           	  //We found one match, let's look for others
-	              for (int j = 2; j < elem.length()-i; j+=2) {
-	            	  regex = ".{"+j+"}([\\d\\s]{"+i+"}?).*\\1";
-	   		       	  p = Pattern.compile(regex);
-	   		       	  matcher = p.matcher(elem);
-	   		       	  if (matcher.find() && !patterns.contains(matcher.group(1).trim())) {
+	        	  for(int j = 2; j < elem.length()-i; j+=2) {
+	   		       	  if (matcher.find(j) && !patterns.contains(matcher.group(1).trim())) {
 	   		       		  patterns.add(matcher.group(1).trim());
-	   		       	  }
-	              }
+	   		       	  }    		  
+	        	  }
 	           } else {
 	        	  //print all the patterns we found
 	        	   int index = 0;
@@ -110,6 +75,35 @@ public class Main {
 	           	  break;
 	           }
 	        }
+        	//make a prediction as to what might come next
+        	
+        	//need to iterate over every pattern, and see if the end of the string fits
+        	/*
+        	Pattern p;
+        	Matcher matcher;
+        	for(String pattern : patterns) {
+        		p = Pattern.compile("^.*"+pattern+"\\s");
+        		matcher = p.matcher(elem);
+        		if (matcher.find()) {
+        			System.out.println("Prediction: "+pattern);
+        		}
+        	}
+        	*/
+        	/*
+        	String regex = "(\\d*)\\s$";
+		    Pattern p = Pattern.compile(regex);
+	        Matcher matcher = p.matcher(elem);
+	        if(matcher.find()) {
+	        	regex = ".*"+matcher.group(1)+"\\s\\d.*";
+	        	p = Pattern.compile(regex);
+	        	for(String pattern : patterns) {
+	        		matcher = p.matcher(pattern);
+	        		if (matcher.find()) {
+	        			System.out.println("Prediction: "+pattern);
+	        		}
+	        	}
+	        }
+	        */
         }
         
     	
