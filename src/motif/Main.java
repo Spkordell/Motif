@@ -34,7 +34,7 @@ public class Main {
        // frame.setVisible(true);
         
 	
-        String arr[] = {"1 2 3 4 1 2 3 4 1 2 3 4 ", "1 2 1 2 1 2 1 2 ", "1 1 2 1 1 3 1 1 2 1 1 3 1 1 2 ", "111 110 2 112 111 110 2 112 "};
+        String arr[] = {"1 2 3 4 1 2 3 4 1 2 3 4 ", "1 2 1 2 1 2 1 2 ", "1 1 2 1 1 3 1 1 2 1 1 3 1 1 2 ", "111 110 2 112 111 110 2 112 111 "};
         //String arr[] = {"1 2 3 4 1 2 3 4 1 "};
         LinkedList<String> patterns;
         for (String elem : arr) {
@@ -70,27 +70,21 @@ public class Main {
      	    //There is probably a better way to do this without using regular expressions
         	//need to iterate over every pattern, and see if the end of the string fits
      
-     	   /*
-     	  LinkedList<String> predictions = new LinkedList<String>();
-     	  for(String pattern : patterns) {
-     		  for(int i = 2; i < pattern.length(); i+=2){
-     			  if (elem.endsWith(pattern.substring(0,pattern.length()-i))) {
-     				  predictions.add(pattern);
-     				  break;
-     			  }
-     		   }
-     	  }
-     	  */
      	        	 
         	String regex;
         	Pattern p;
         	Matcher matcher;
         	LinkedList<String> predictions = new LinkedList<String>();
         	for(String pattern : patterns) {
-        		regex = "(";
-        		for(int i = 2; i < pattern.length(); i+=2){
-        			regex+=pattern.substring(0,pattern.length()-i).trim()+"|";
+        		regex = "\\s(";
+        		
+        		
+        		int i = 0;
+        		while ( (i = pattern.indexOf(' ',++i)) != -1) {
+        			regex+=pattern.substring(0,i).trim()+"|";
         		}
+        				
+        		
         		if (regex.endsWith("|")) {
         			regex = regex.substring(0,regex.length()-1);
         		}
@@ -114,8 +108,8 @@ public class Main {
         	if (predictions.size() == 0) {
         		System.out.println("No predicions");
         	} else {
-	      	   	for(String pattern : predictions){
-	      	   		System.out.println("Prediction: "+pattern);
+	      	   	for(String prediction : predictions){
+	      	   		System.out.println("Prediction: "+prediction);
 	      	   	}
         	}
         }
