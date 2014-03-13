@@ -80,36 +80,32 @@ public class Main {
         */
     
     	
-        String arr[] = {"1 2 3 4 1 2 3 4 ", "1 2 1 2 1 2 1 2 ", " 1 1 2 1 1 3 1 1 2 1 1 2 "};
+        //String arr[] = {"1 2 3 4 1 2 3 4 ", "1 2 1 2 1 2 1 2 ", "8 1 1 2 1 1 3 1 1 2 8 1 1 3 "};
+    	String arr[] = {"1 5 4 3 2 4 5 5 4 3  2 5 9 9 4 5 3 8 9 2 1 7 8 0 5 0 4 3 7 5 "};
         LinkedList<String> patterns;
         for (String elem : arr) {
         	patterns = new LinkedList<String>();
 	        System.out.println("------"+elem+"------");
-        	for (int i = 2; i < elem.length(); i+=2){
+        	for (int i = 4; i < elem.length(); i+=2){
 		       String regex = "([\\d\\s]{"+i+"}?).*\\1";
 		       Pattern p = Pattern.compile(regex);
 	           Matcher matcher = p.matcher(elem);
 	           if (matcher.find()) {
-	        	  patterns.add(matcher.group(1));
-	              //System.out.println("Pattern " + i/2 +": " + matcher.group(1));
+	        	  patterns.add(matcher.group(1).trim());
 	           	  //We found one match, let's look for others
-	              for (int j = 2; j < elem.length(); j+=2) {
+	              for (int j = 2; j < elem.length()-i; j+=2) {
 	            	  regex = ".{"+j+"}([\\d\\s]{"+i+"}?).*\\1";
 	   		       	  p = Pattern.compile(regex);
 	   		       	  matcher = p.matcher(elem);
-	   		       	  if (matcher.find() && !patterns.contains(matcher.group(1))) {
-	   		       		  patterns.add(matcher.group(1));
-	   		       		  //System.out.println("Pattern+ " + i/2 +": " + matcher.group(1));
-	   		       	  } else {
-	   		       		  break;
+	   		       	  if (matcher.find() && !patterns.contains(matcher.group(1).trim())) {
+	   		       		  patterns.add(matcher.group(1).trim());
 	   		       	  }
 	              }
 	           } else {
-	              //System.out.println("No more patterns");
-	        	   
 	        	  //print all the patterns we found
+	        	   int index = 0;
 	        	   for(String pattern : patterns){
-	        		   System.out.println("Pattern: "+pattern);
+	        		   System.out.println("Pattern "+(index++)+": "+pattern);
 	        	   }
 	           	  break;
 	           }
