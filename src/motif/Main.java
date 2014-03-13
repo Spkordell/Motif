@@ -48,7 +48,8 @@ public class Main {
         }
         */    
     	
-        String arr[] = {"1 2 3 4 1 2 3 4 1 2 3 4 ", "1 2 1 2 1 2 1 2 ", "1 1 2 1 1 3 1 1 2 1 1 3 1 1 2 "};
+        //String arr[] = {"1 2 3 4 1 2 3 4 1 2 3 4 ", "1 2 1 2 1 2 1 2 ", "1 1 2 1 1 3 1 1 2 1 1 3 1 1 2 "};
+        String arr[] = {"1 2 3 4 1 2 3 4 1 "};
     	//String arr[] = {"1 5 4 3 2 4 5 5 4 3 2 5 9 9 4 5 3 8 9 2 1 7 8 0 5 0 4 3 7 5 "};
         LinkedList<String> patterns;
         for (String elem : arr) {
@@ -64,46 +65,42 @@ public class Main {
 	        	  for(int j = 2; j < elem.length()-i; j+=2) {
 	   		       	  if (matcher.find(j) && !patterns.contains(matcher.group(1).trim())) {
 	   		       		  patterns.add(matcher.group(1).trim());
-	   		       	  }    		  
+	   		       	  }
 	        	  }
 	           } else {
-	        	  //print all the patterns we found
-	        	   int index = 0;
-	        	   for(String pattern : patterns){
-	        		   System.out.println("Pattern "+(index++)+": "+pattern);
-	        	   }
+	        	  //we won't find anymore patterns, leave loop early
 	           	  break;
 	           }
-	        }
+	       }
+      	   //we're done, print all the patterns we found
+     	   int index = 0;
+     	   for(String pattern : patterns){
+     		   System.out.println("Pattern "+(index++)+": "+pattern);
+     	   }
+     	   
         	//make a prediction as to what might come next
         	
         	//need to iterate over every pattern, and see if the end of the string fits
-        	/*
+        	String regex;
         	Pattern p;
         	Matcher matcher;
         	for(String pattern : patterns) {
-        		p = Pattern.compile("^.*"+pattern+"\\s");
+        		//regex = "("+pattern.substring(0,pattern.length()-1)+"|"+pattern.substring(0,pattern.length()-2)+")\\s$";
+        		regex = "(";
+        		for(int i = 2; i < pattern.length(); i+=2){
+        			regex+=pattern.substring(0,pattern.length()-i)+"|";
+        		}
+        		regex = regex.substring(0,regex.length()-1) + ")\\s$";
+        		//System.out.println(regex);
+        		p = Pattern.compile(regex);
+        	        		
         		matcher = p.matcher(elem);
         		if (matcher.find()) {
         			System.out.println("Prediction: "+pattern);
         		}
         	}
-        	*/
-        	/*
-        	String regex = "(\\d*)\\s$";
-		    Pattern p = Pattern.compile(regex);
-	        Matcher matcher = p.matcher(elem);
-	        if(matcher.find()) {
-	        	regex = ".*"+matcher.group(1)+"\\s\\d.*";
-	        	p = Pattern.compile(regex);
-	        	for(String pattern : patterns) {
-	        		matcher = p.matcher(pattern);
-	        		if (matcher.find()) {
-	        			System.out.println("Prediction: "+pattern);
-	        		}
-	        	}
-	        }
-	        */
+        	
+        	//Now that we know which patterns match the end of the string, need to produce the next expected value
         }
         
     	
