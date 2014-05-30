@@ -9,7 +9,7 @@ import javax.swing.*;
 
 
 public class Main {
-	private static JFrame frame;
+	//private static JFrame frame;
 	private static JPanel mainPanel;
 	private static LinkedList<Component> cList;
 	
@@ -19,7 +19,7 @@ public class Main {
      * event-dispatching thread.
      */
     private static void createAndShowGUI() {
-    	cList = new LinkedList<Component>();
+    	//cList = new LinkedList<Component>();
     	//mainPanel = new JPanel(new GridLayout(1, 1));    	
         //Create and set up the window.
        // frame = new JFrame("Ipsum");
@@ -33,21 +33,19 @@ public class Main {
        // frame.pack();
        // frame.setVisible(true);
         
-	
-        String arr[] = {"1 2 3 4 1 2 3 4 1 2 3 4 ", "1 2 1 2 1 2 1 2 ", "1 1 2 1 1 3 1 1 2 1 1 3 1 1 2 ", "111 110 2 112 111 110 2 112 111 "};
-        //String arr[] = {"1 2 3 4 1 2 3 4 1 "};
+        //String arr[] = {"1 2 3 4 1 2 3 4 1 2 3 4 ", "1 2 1 2 1 2 1 2 ", "1 1 2 1 1 3 1 1 2 1 1 3 1 1 2 ", "111 110 2 112 111 110 2 112 111 "};
+        String arr[] = {"1 2 1 2 1 3 1 2 1 2 1 3 1 "};
         LinkedList<String> patterns;
         for (String elem : arr) {
         	patterns = new LinkedList<String>();
 	        System.out.println("------"+elem+"------");
-        	//for (int i = 4; i < elem.length(); i+=2){
 	        for (int i = 2; i < elem.length()/2; i+=1){
-		       //String regex = "([\\d\\s]{"+i+"}?).*\\1";
         	   String regex = "((\\d+\\s){"+i+"}).*\\1";
 		       Pattern p = Pattern.compile(regex);
 	           Matcher matcher = p.matcher(elem);
 	           if (matcher.find()) {
 	        	  patterns.add(matcher.group(1).trim());
+	        	  determineStrength(elem,matcher.group(1).trim());
 	        	  int j = 0;
 	        	  do {
 		        	  j = elem.indexOf(' ',++j);
@@ -66,35 +64,26 @@ public class Main {
      		   System.out.println("Pattern "+(index++)+": "+pattern);
      	   }
      	   
-        	//make a prediction as to what might come next
-     	    //There is probably a better way to do this without using regular expressions
-        	//need to iterate over every pattern, and see if the end of the string fits
-     
-     	        	 
+        	//make a prediction as to what might come next	 
         	String regex;
         	Pattern p;
         	Matcher matcher;
         	LinkedList<String> predictions = new LinkedList<String>();
         	for(String pattern : patterns) {
         		regex = "\\s(";
-        		
-        		
         		int i = 0;
         		while ( (i = pattern.indexOf(' ',++i)) != -1) {
         			regex+=pattern.substring(0,i).trim()+"|";
         		}
-        				
-        		
         		if (regex.endsWith("|")) {
         			regex = regex.substring(0,regex.length()-1);
         		}
         		regex += ")\\s$";
-        		System.out.println(regex);
+        		//System.out.println(regex);
         		p = Pattern.compile(regex);        	        		
         		matcher = p.matcher(elem);
         		if (matcher.find()) {
         			//This pattern matches some part of the end of the input
-
         			//chop off the portion of the pattern that intersects with the end of the input, leaving just the prediction
         			int idx = pattern.length();
                  	while (!elem.endsWith(pattern.substring(0, idx--)));
@@ -117,7 +106,27 @@ public class Main {
     	
     }
  
-    public static void main(String[] args) {
+    private static void determineStrength(String elem, String pattern) {
+    	//count number of times pattern appears
+    	//int patternCount = elem.split(pattern).length-1;
+    	int patternCount = elem.split("(?="+pattern+")").length-1; //The lookahead allows the split to capture overlaps
+    	
+    	////count number of times pattern doesn't appear
+    	//chop off the last element of the pattern
+    	int idx = pattern.length();
+     	while (!pattern.substring(0,idx--).endsWith(" "));
+     	     
+    	//int patternMissedCount = (elem.split(pattern.substring(0,idx)).length-1)-patternCount;
+     	int patternMissedCount = (elem.split("(?="+pattern.substring(0,idx)+")").length-1)-patternCount; //The lookahead allows the split to capture overlaps
+     	
+     	
+    	System.out.println(pattern+": "+patternCount+", "+pattern.substring(0,idx)+": "+patternMissedCount);
+    	
+//TODO, decrease pattern missed count by one if patter was at end
+    	//divide and return results
+	}
+
+	public static void main(String[] args) {
         //Schedule a job for the event-dispatching thread:
         //creating and showing this application's GUI.
         javax.swing.SwingUtilities.invokeLater(new Runnable() {
