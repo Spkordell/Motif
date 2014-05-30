@@ -106,24 +106,23 @@ public class Main {
     	
     }
  
-    private static void determineStrength(String elem, String pattern) {
+    private static float determineStrength(String elem, String pattern) {
     	//count number of times pattern appears
-    	//int patternCount = elem.split(pattern).length-1;
     	int patternCount = elem.split("(?="+pattern+")").length-1; //The lookahead allows the split to capture overlaps
     	
-    	////count number of times pattern doesn't appear
-    	//chop off the last element of the pattern
+    	//count number of times pattern doesn't appear
     	int idx = pattern.length();
-     	while (!pattern.substring(0,idx--).endsWith(" "));
-     	     
-    	//int patternMissedCount = (elem.split(pattern.substring(0,idx)).length-1)-patternCount;
+     	while (!pattern.substring(0,idx--).endsWith(" ")); //chop off the last element of the pattern 
      	int patternMissedCount = (elem.split("(?="+pattern.substring(0,idx)+")").length-1)-patternCount; //The lookahead allows the split to capture overlaps
+     	//subtract 1 from missed count if input string ends in the partial pattern (We can't miss a pattern we haven't fully seen yet)    	
+     	if (elem.endsWith(pattern.substring(0,idx)+" ")) {
+     		patternMissedCount-=1;
+     	}
      	
-     	
-    	System.out.println(pattern+": "+patternCount+", "+pattern.substring(0,idx)+": "+patternMissedCount);
+     	float patternStrength = 1-((float)patternMissedCount/(patternCount+patternMissedCount));
+    	//System.out.println(pattern+": "+patternCount+", "+pattern.substring(0,idx)+": "+patternMissedCount+" = "+patternStrength*100+"%");
     	
-//TODO, decrease pattern missed count by one if patter was at end
-    	//divide and return results
+    	return patternStrength;
 	}
 
 	public static void main(String[] args) {
