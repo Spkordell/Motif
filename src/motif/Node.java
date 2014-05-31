@@ -14,6 +14,8 @@ import java.util.regex.Pattern;
 public class Node {
 
 	private String data;
+	private int output;
+	
 	public Node() {
 		this.data = "";
 	}
@@ -23,11 +25,90 @@ public class Node {
 	 */
 	public String step(int frame) {
 		this.data+=frame+" ";
-		LinkedList<String> patterns;
-		
-		patterns = new LinkedList<String>();
-
+		return this.mineSequentialPatterns();
+	}
+	
+	private String mineSequentialPatterns() {	
         System.out.println("------"+this.data+"------");
+		return makePrediction(this.findPatterns());
+	}
+    
+    private String makePrediction(LinkedList<String> patterns) {
+		//make a prediction as to what might come next	 
+		String regex;
+		Pattern p;
+		Matcher matcher;
+		LinkedList<String> predictions = new LinkedList<String>();
+		LinkedList<Float> predictionStrengths = new LinkedList<Float>();
+		for(String pattern : patterns) {
+			regex = "\\s(";
+			int i = 0;
+			while ( (i = pattern.indexOf(' ',++i)) != -1) {
+				regex+=pattern.substring(0,i).trim()+"|";
+			}
+			if (regex.endsWith("|")) {
+				regex = regex.substring(0,regex.length()-1);
+			}
+			regex += ")\\s$";
+			p = Pattern.compile(regex);        	        		
+			matcher = p.matcher(this.data);
+			if (matcher.find()) {
+				//This pattern matches some part of the end of the input
+	
+				//chop off the portion of the pattern that intersects with the end of the input, leaving just the prediction
+				int idx = pattern.length();
+				while (!this.data.endsWith(pattern.substring(0, idx--)));
+				String prediction = pattern.substring(idx + 1);
+	      	
+		      	Float predictionStrength = determinePredictionStrength(this.data, pattern, prediction);
+		      	
+		      	if (!predictions.contains(prediction)) { //remove repeated predictions
+		   	   		predictions.add(prediction);
+		   	   		predictionStrengths.add(predictionStrength);//The prediction strength is equal to the strength of the pattern the prediction came from
+		      	} else {
+		      		//compare strengths and keep the largest
+		      		int predictionIndex = predictions.indexOf(prediction);
+		      		if (predictionStrengths.get(predictionIndex) <  predictionStrength) {
+		      			predictionStrengths.set(predictionIndex, predictionStrength);
+		      		}
+		      	}
+			}
+		}
+		float largestPredictionStrength = -1;
+		
+		if (predictions.size() == 0) {
+			System.out.println("No predicions");
+			return "-1";
+		} else {
+			int predictionIndex = 0;
+		   	for(String prediction : predictions){
+		   		System.out.println("Prediction: "+prediction+" = "+predictionStrengths.get(predictionIndex)*100+"%");
+		   		if (predictionStrengths.get(predictionIndex) > largestPredictionStrength) {
+		   			largestPredictionStrength = predictionStrengths.get(predictionIndex);
+		   		}
+		   		predictionIndex++;
+		   	}
+		}
+
+		//Select a prediction (first, find prediction with highest accuracy. Break ties by selecting prediction with most this.dataents.
+		int predictionIndex = 0;
+		int largestPredictionLength = -1;
+		String selectedPrediction = null;
+		for(String prediction : predictions){
+			int predictionLength = countElements(prediction);
+	   		if (predictionStrengths.get(predictionIndex) == largestPredictionStrength && predictionLength > largestPredictionLength) {
+	   			selectedPrediction = prediction;
+	   			largestPredictionLength = predictionLength;
+	   		}
+	   		predictionIndex++;
+	   	}
+		System.out.println("Selected Prediction: "+selectedPrediction+" = "+largestPredictionStrength*100 + "%");
+		return selectedPrediction;
+	}
+
+	private LinkedList<String> findPatterns() {
+    	LinkedList<String> patterns = new LinkedList<String>();;
+	
         for (int i = 2; i < this.data.length()/2; i+=1){
     	   String regex = "((\\d+\\s){"+i+"}).*\\1";
 	       Pattern p = Pattern.compile(regex);
@@ -52,83 +133,20 @@ public class Node {
  		   System.out.println("Pattern "+(index++)+": "+pattern);
  	   }
  	   
-    	//make a prediction as to what might come next	 
-    	String regex;
-    	Pattern p;
-    	Matcher matcher;
-    	LinkedList<String> predictions = new LinkedList<String>();
-    	LinkedList<Float> predictionStrengths = new LinkedList<Float>();
-    	for(String pattern : patterns) {
-    		regex = "\\s(";
-    		int i = 0;
-    		while ( (i = pattern.indexOf(' ',++i)) != -1) {
-    			regex+=pattern.substring(0,i).trim()+"|";
-    		}
-    		if (regex.endsWith("|")) {
-    			regex = regex.substring(0,regex.length()-1);
-    		}
-    		regex += ")\\s$";
-    		p = Pattern.compile(regex);        	        		
-    		matcher = p.matcher(this.data);
-    		if (matcher.find()) {
-    			//This pattern matches some part of the end of the input
+ 	   //set the nodes output to the name of the index of the last pattern which matches
+ 	   //todo: problems will probably occur here when data is delivered to the node element by element as the output might fire more than necessary.
 
-    			//chop off the portion of the pattern that intersects with the end of the input, leaving just the prediction
-    			int idx = pattern.length();
-             	while (!this.data.endsWith(pattern.substring(0, idx--)));
-             	String prediction = pattern.substring(idx + 1);
-             	
-             	Float predictionStrength = determinePredictionStrength(this.data, pattern, prediction);
-             	
-             	if (!predictions.contains(prediction)) { //remove repeated predictions
-          	   		predictions.add(prediction);
-          	   		predictionStrengths.add(predictionStrength);//The prediction strength is equal to the strength of the pattern the prediction came from
-             	} else {
-             		//compare strengths and keep the largest
-             		int predictionIndex = predictions.indexOf(prediction);
-             		if (predictionStrengths.get(predictionIndex) <  predictionStrength) {
-             			predictionStrengths.set(predictionIndex, predictionStrength);
-             		}
-             	}
-    		}
-    	}
-    	
-		float largestPredictionStrength = -1;
-		
-    	if (predictions.size() == 0) {
-    		System.out.println("No predicions");
-    	} else {
-    		int predictionIndex = 0;
-      	   	for(String prediction : predictions){
-      	   		System.out.println("Prediction: "+prediction+" = "+predictionStrengths.get(predictionIndex)*100+"%");
-      	   		if (predictionStrengths.get(predictionIndex) > largestPredictionStrength) {
-      	   			largestPredictionStrength = predictionStrengths.get(predictionIndex);
-      	   		}
-      	   		predictionIndex++;
-      	   	}
-    	}
-    	
-    	//Select a prediction (first, find prediction with highest accuracy. Break ties by selecting prediction with most this.dataents.
-      	if (predictions.size() > 0) {
-      		int predictionIndex = 0;
-      		int largestPredictionLength = -1;
-      		String selectedPrediction = null;
-      		for(String prediction : predictions){
-      			int predictionLength = countElements(prediction);
-      	   		if (predictionStrengths.get(predictionIndex) == largestPredictionStrength && predictionLength > largestPredictionLength) {
-      	   			selectedPrediction = prediction;
-      	   			largestPredictionLength = predictionLength;
-      	   		}
-      	   		predictionIndex++;
-      	   	}
-      		System.out.println("Selected Prediction: "+selectedPrediction+" = "+largestPredictionStrength*100 + "%");
-    	}
-
-		return "-1";
+ 	   if (patterns.size() > 0 && this.data.endsWith(patterns.getLast()+" ")) {  
+ 		   this.output = index-1;
+ 	   } else {
+ 		   this.output = -1;
+ 	   }
+ 	   
+ 	   return patterns;
 	}
-	
+
     
-    private static int countElements(String string) {
+	private static int countElements(String string) {
 		return string.split(" ").length;
 	}
 	

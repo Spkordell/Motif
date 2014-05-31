@@ -2,11 +2,8 @@ package motif;
 
 import java.awt.*;
 import java.util.LinkedList;
-import java.util.Stack;
 
 import javax.swing.*;
-
-import sun.misc.Queue;
 
 public class Main {
 	//private static JFrame frame;
