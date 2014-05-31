@@ -11,20 +11,25 @@ import java.util.regex.Pattern;
  * @author Steve Kordell
  *
  */
-public class Node {
+public class PRM extends AbstractNode {
 
 	private String data;
-	private int output;
-	
-	public Node() {
+
+	public PRM() {
+		super();
 		this.data = "";
 	}
-	
+		
 	/*
 	 * Takes a single frame, returns a string of predictions
 	 */
 	public String step(int frame) {
 		this.data+=frame+" ";
+		return this.mineSequentialPatterns();
+	}
+	
+	public String step() {
+		this.data+=this.getDendrites().getFirst().getAxon()+" "; //todo: for now only using the first input, heavy modifications will be needed to work with multiple inputs
 		return this.mineSequentialPatterns();
 	}
 	
@@ -137,9 +142,9 @@ public class Node {
  	   //todo: problems will probably occur here when data is delivered to the node element by element as the output might fire more than necessary.
 
  	   if (patterns.size() > 0 && this.data.endsWith(patterns.getLast()+" ")) {  
- 		   this.output = index-1;
+ 		   this.setAxon(index-1);
  	   } else {
- 		   this.output = -1;
+ 		   this.setAxon(-1);
  	   }
  	   
  	   return patterns;

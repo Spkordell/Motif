@@ -29,25 +29,16 @@ public class Main {
         //frame.pack();
         //frame.setVisible(true);
     	
-    	Node firstNode = new Node();
-    	firstNode.step(1);
-    	firstNode.step(2);
-    	firstNode.step(1);
-    	firstNode.step(2);
-    	firstNode.step(1);
-    	firstNode.step(3);
-    	firstNode.step(1);
-    	firstNode.step(3);
-    	firstNode.step(1);
-    	firstNode.step(2);
-    	firstNode.step(1);
-    	firstNode.step(2);
-    	firstNode.step(1);
-    	firstNode.step(3);
-    	firstNode.step(1);
-    	firstNode.step(3);
-    	firstNode.step(1);
-
+    	GI firstGI = new GI();
+    	PRM firstPRM = new PRM();
+    	firstPRM.connectDendriteTo(firstGI);
+    	int[] testData = {1, 2, 1, 2, 1, 3, 1, 3, 1, 2, 1, 2, 1, 3, 1, 3, 1};
+    	firstGI.addData(testData);
+    	
+    	//send all the buffered data
+    	while (!firstGI.isEmpty()) {
+    		firstPRM.step();
+    	}
     }
     
 	public static void main(String[] args) {
