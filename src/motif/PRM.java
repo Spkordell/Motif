@@ -15,7 +15,7 @@ public class PRM extends AbstractNode {
 
 	private String data;
 	private LinkedList<String> patterns;
-	private Prediction currentPrediction;
+	private LinkedList<Prediction> currentPredictions;
 
 	public PRM() {
 		super();
@@ -23,88 +23,119 @@ public class PRM extends AbstractNode {
 		this.patterns = new LinkedList<String>();
 	}
 	
-	public Prediction step() {
+	public LinkedList<Prediction> step() {
 		this.data+=this.getDendrites().getFirst().getAxon()+" "; //todo: for now only using the first input, heavy modifications will be needed to work with multiple inputs
 		return this.mineSequentialPatterns();
 	}
 	
-	private Prediction mineSequentialPatterns() {	
+	private LinkedList<Prediction> mineSequentialPatterns() {	
         System.out.println("------"+this.data+"------");
 		return makePrediction(this.findPatterns());
 	}
     
-    private Prediction makePrediction(LinkedList<String> patterns) {
-		//make a prediction as to what might come next	 
-		String regex;
-		Pattern p;
-		Matcher matcher;
-		LinkedList<Prediction> predictions = new LinkedList<Prediction>();		
-		for(String pattern : patterns) {
-			regex = "\\s(";
-			int i = 0;
-			while ( (i = pattern.indexOf(' ',++i)) != -1) {
-				regex+=pattern.substring(0,i).trim()+"|";
-			}
-			if (regex.endsWith("|")) {
-				regex = regex.substring(0,regex.length()-1);
-			}
-			regex += ")\\s$";
-			p = Pattern.compile(regex);        	        		
-			matcher = p.matcher(this.data);
-			if (matcher.find()) {
-				//This pattern matches some part of the end of the input
-	
-				//chop off the portion of the pattern that intersects with the end of the input, leaving just the prediction
-				int idx = pattern.length();
-				while (!this.data.endsWith(pattern.substring(0, idx--)));
-				Prediction prediction = new Prediction(pattern.substring(idx + 1), pattern, patterns.indexOf(pattern));
-				
-				prediction.setStrength(determinePredictionStrength(this.data, pattern, prediction.getPrediction()));
-				
-				if (!hasRepeatedPrediction(predictions,prediction)) { //remove repeated predictions
-		   	   		predictions.add(prediction);
-		      	} else {
-		      		//compare strengths and keep the largest	      		
-		      		Prediction predictionInList = findPredictionWithValue(predictions,prediction);
-		      		if (predictionInList.getStrength() <  prediction.getStrength()) {
-		      			predictionInList.setStrength(prediction.getStrength());
-		      		}		      		
-		      	}
-			}
-		}
-		float largestPredictionStrength = -1;
+    private LinkedList<Prediction> makePrediction(LinkedList<String> patterns) {
+    	
+    	if (currentPredictions == null || anyPredictionMet() || allPredictionsFailed()) {
+    		//not monitoring any predictions, search for new ones to monitor
+	    		
+			//make a prediction as to what might come next	 
+			String regex;
+			Pattern p;
+			Matcher matcher;
+			LinkedList<Prediction> predictions = new LinkedList<Prediction>();		
+			for(String pattern : patterns) {
+				regex = "\\s(";
+				int i = 0;
+				while ( (i = pattern.indexOf(' ',++i)) != -1) {
+					regex+=pattern.substring(0,i).trim()+"|";
+				}
+				if (regex.endsWith("|")) {
+					regex = regex.substring(0,regex.length()-1);
+				}
+				regex += ")\\s$";
+				p = Pattern.compile(regex);        	        		
+				matcher = p.matcher(this.data);
+				if (matcher.find()) {
+					//This pattern matches some part of the end of the input
 		
-		if (predictions.size() == 0) {
-			System.out.println("No predicions");
-			return new Prediction("-1","-1",-1);
-		} else {
-			//int predictionIndex = 0;
-		   	for(Prediction prediction : predictions){
-		   		System.out.println("Prediction: "+prediction.getPrediction()+" = "+prediction.getStrength()*100+"%"+" : "+prediction.getAssociatedPattern());
-		   		if (prediction.getStrength() > largestPredictionStrength) {
-		   			largestPredictionStrength = prediction.getStrength();
-		   		}
+					//chop off the portion of the pattern that intersects with the end of the input, leaving just the prediction
+					int idx = pattern.length();
+					while (!this.data.endsWith(pattern.substring(0, idx--)));
+					Prediction prediction = new Prediction(pattern.substring(idx + 1), pattern, patterns.indexOf(pattern));
+					
+					prediction.setStrength(determinePredictionStrength(this.data, pattern, prediction.getPrediction()));
+					
+					if (!hasRepeatedPrediction(predictions,prediction)) { //remove repeated predictions
+			   	   		predictions.add(prediction);
+			      	} else {
+			      		//compare strengths and keep the largest	      		
+			      		Prediction predictionInList = findPredictionWithValue(predictions,prediction);
+			      		if (predictionInList.getStrength() <  prediction.getStrength()) {
+			      			predictionInList.setStrength(prediction.getStrength());
+			      		}		      		
+			      	}
+				}
+			}
+			
+			float largestPredictionStrength = -1;			
+			if (predictions.size() == 0) {
+				System.out.println("No predicions");
+				return new LinkedList<Prediction>();
+			} else {
+				//int predictionIndex = 0;
+			   	for(Prediction prediction : predictions){
+			   		System.out.println("Prediction: "+prediction.getPrediction()+" = "+prediction.getStrength()*100+"%"+" : "+prediction.getAssociatedPattern());
+			   		if (prediction.getStrength() > largestPredictionStrength) {
+			   			largestPredictionStrength = prediction.getStrength();
+			   		}
+			   	}
+			}
+	
+			//Select predictions		
+			//TODO: currently sending multiple predictions only if the strengths tie perfectly. Might want to send predictions for close matches too.
+			LinkedList<Prediction> selectedPredictions = new LinkedList<Prediction>();		
+			for(Prediction prediction : predictions){
+				if (prediction.getStrength() == largestPredictionStrength) {
+					//Remove predictions which which have overlap (want just the longest version of each predicion)
+					for (Prediction aPrediction : selectedPredictions) {
+						if (prediction.getPrediction().startsWith(aPrediction.getPrediction()+" ")) {
+							selectedPredictions.remove(aPrediction);
+						}
+					}
+					selectedPredictions.add(prediction);	
+				}	
 		   	}
-		}
-
-		//Select a prediction (first, find prediction with highest accuracy. Break ties by selecting longest prediction. TODO: instead of breaking ties, set multiple possible predictions.
-		int largestPredictionLength = -1;
-		Prediction selectedPrediction = null;
-		for(Prediction prediction : predictions){
-			int predictionLength = countElements(prediction.getPrediction());
-				if (prediction.getStrength() == largestPredictionStrength && predictionLength > largestPredictionLength) {
-	   			selectedPrediction = prediction;
-	   			largestPredictionLength = predictionLength;
-	   		}
-	   	}
-		System.out.println("Selected Prediction: "+selectedPrediction.getPrediction()+" = "+largestPredictionStrength*100 + "%");
-		if (currentPrediction == null || currentPrediction.isMet() || currentPrediction.isFailed()) {
-			this.currentPrediction = selectedPrediction;
-		}
-		return selectedPrediction;
+			
+			for(Prediction prediction : selectedPredictions){
+				System.out.println("Selected Prediction: "+prediction.getPrediction()+" = "+largestPredictionStrength*100 + "%");
+			}
+		
+		
+			//save a new prediction to watch for
+			this.currentPredictions = selectedPredictions;
+		}			
+		return currentPredictions;
 	}
     
-    private Prediction findPredictionWithValue(LinkedList<Prediction> predictions, Prediction prediction) {
+    private boolean anyPredictionMet() {
+    	for (Prediction prediction: this.currentPredictions) {
+    		if (prediction.isMet()) {
+    			return true;
+    		}
+    	}
+    	return false;
+	}
+    
+    private boolean allPredictionsFailed() {
+    	for (Prediction prediction: this.currentPredictions) {
+    		if (!prediction.isFailed()) {
+    			return false;
+    		}
+    	}
+    	return true;
+	}
+
+	private Prediction findPredictionWithValue(LinkedList<Prediction> predictions, Prediction prediction) {
     	for (Prediction aPrediction: predictions) {
     		if (aPrediction.getPrediction().equals(prediction.getPrediction())) {
     			return aPrediction;
@@ -155,38 +186,49 @@ public class PRM extends AbstractNode {
  	   //determine if prediction has been satisfied 
  	   
  	   
- 	   if (currentPrediction != null && !currentPrediction.isMet()) {
-	 	   if (this.data.endsWith(currentPrediction.getAssociatedPattern()+" ")) {
-	 		  this.setAxon(currentPrediction.getAssociatedPatternIndex());
-	 		  currentPrediction.hasBeenMet();
-	 	   } else {
-	 		   String regex;
-	 		   Pattern p;
-	 		   Matcher matcher;		
-	 		   regex = "\\s(";		   
-			   int i = 0;
-			   while ( (i = currentPrediction.getAssociatedPattern().indexOf(' ',++i)) != -1) {
-				   regex+=currentPrediction.getAssociatedPattern().substring(0,i).trim()+"|";
-			   }
-			   if (regex.endsWith("|")) {
-				   regex = regex.substring(0,regex.length()-1);
-			   }
-			   regex += ")\\s$";
-			   p = Pattern.compile(regex);        	        		
-			   matcher = p.matcher(this.data);
-			   if (!matcher.find()) {
-				   //The prediction was wrong, we got something we didn't expect
-				   currentPrediction.hasFailed();
-				   System.out.println("Prediction Failed");
-			   }
-			   this.setAxon(-1);
+ 	   if (currentPredictions != null && !anyPredictionMet()) {
+ 		   for (Prediction prediction: this.currentPredictions) {
+		 	   if (this.data.endsWith(prediction.getAssociatedPattern()+" ")) {
+		 		  this.setAxon(prediction.getAssociatedPatternIndex());
+		 		  prediction.hasBeenMet();
+		 	 	  System.out.println("Prediction Successs: Node Output = "+this.getAxon());
+		 		  break;
+		 	   } else {
+		 		   String regex;
+		 		   Pattern p;
+		 		   Matcher matcher;		
+		 		   regex = "\\s(";		   
+				   int i = 0;
+				   while ( (i = prediction.getAssociatedPattern().indexOf(' ',++i)) != -1) {
+					   regex+=prediction.getAssociatedPattern().substring(0,i).trim()+"|";
+				   }
+				   if (regex.endsWith("|")) {
+					   regex = regex.substring(0,regex.length()-1);
+				   }
+				   regex += ")\\s$";
+				   p = Pattern.compile(regex);        	        		
+				   matcher = p.matcher(this.data);
+				   if (!matcher.find()) {
+					   //The prediction was wrong, we got something we didn't expect
+					   prediction.hasFailed();
+					   System.out.println("Prediction Failed");
+				   }
+				   this.setAxon(-1);
+				   System.out.println("Node Output = "+this.getAxon());
+		 	   }
+ 		   }
+	 	   if (!allPredictionsFailed() && this.getAxon() == -1) {
+	 	 	   System.out.println("Waiting for Predictions to be met");
+	 	 	   
+	 	 	   //TODO: any time I get another data point, it's posisble a longer predcition could be found that has a higher strength. Might need to find a way to check for that rather thatn jsut waiting for this one to be met
+	 	 	   
 	 	   }
  	   } else {
  		   this.setAxon(-1);
+ 		   System.out.println("Node Output = "+this.getAxon());
  	   }
- 	   System.out.println("Prediction Successs: Node Output = "+this.getAxon());
- 	   
- 	   //need to add prediction fail test
+
+
  	   
  	   return patterns;
 	}

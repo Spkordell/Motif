@@ -60,4 +60,7 @@ public class Prediction {
 		return this.failed;
 	}
 	
+	public String toString() {
+		return this.prediction;
+	}
 }
