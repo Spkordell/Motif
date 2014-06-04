@@ -14,37 +14,31 @@ import java.util.regex.Pattern;
 public class PRM extends AbstractNode {
 
 	private String data;
+	private LinkedList<String> patterns;
+	private Prediction currentPrediction;
 
 	public PRM() {
 		super();
 		this.data = "";
-	}
-		
-	/*
-	 * Takes a single frame, returns a string of predictions
-	 */
-	public String step(int frame) {
-		this.data+=frame+" ";
-		return this.mineSequentialPatterns();
+		this.patterns = new LinkedList<String>();
 	}
 	
-	public String step() {
+	public Prediction step() {
 		this.data+=this.getDendrites().getFirst().getAxon()+" "; //todo: for now only using the first input, heavy modifications will be needed to work with multiple inputs
 		return this.mineSequentialPatterns();
 	}
 	
-	private String mineSequentialPatterns() {	
+	private Prediction mineSequentialPatterns() {	
         System.out.println("------"+this.data+"------");
 		return makePrediction(this.findPatterns());
 	}
     
-    private String makePrediction(LinkedList<String> patterns) {
+    private Prediction makePrediction(LinkedList<String> patterns) {
 		//make a prediction as to what might come next	 
 		String regex;
 		Pattern p;
 		Matcher matcher;
-		LinkedList<String> predictions = new LinkedList<String>();
-		LinkedList<Float> predictionStrengths = new LinkedList<Float>();
+		LinkedList<Prediction> predictions = new LinkedList<Prediction>();		
 		for(String pattern : patterns) {
 			regex = "\\s(";
 			int i = 0;
@@ -63,19 +57,18 @@ public class PRM extends AbstractNode {
 				//chop off the portion of the pattern that intersects with the end of the input, leaving just the prediction
 				int idx = pattern.length();
 				while (!this.data.endsWith(pattern.substring(0, idx--)));
-				String prediction = pattern.substring(idx + 1);
-	      	
-		      	Float predictionStrength = determinePredictionStrength(this.data, pattern, prediction);
-		      	
-		      	if (!predictions.contains(prediction)) { //remove repeated predictions
+				Prediction prediction = new Prediction(pattern.substring(idx + 1),patterns.indexOf(pattern));
+				
+				prediction.setStrength(determinePredictionStrength(this.data, pattern, prediction.getPrediction()));
+				
+				if (!hasRepeatedPrediction(predictions,prediction)) { //remove repeated predictions
 		   	   		predictions.add(prediction);
-		   	   		predictionStrengths.add(predictionStrength);//The prediction strength is equal to the strength of the pattern the prediction came from
 		      	} else {
-		      		//compare strengths and keep the largest
-		      		int predictionIndex = predictions.indexOf(prediction);
-		      		if (predictionStrengths.get(predictionIndex) <  predictionStrength) {
-		      			predictionStrengths.set(predictionIndex, predictionStrength);
-		      		}
+		      		//compare strengths and keep the largest	      		
+		      		Prediction predictionInList = findPredictionWithValue(predictions,prediction);
+		      		if (predictionInList.getStrength() <  prediction.getStrength()) {
+		      			predictionInList.setStrength(prediction.getStrength());
+		      		}		      		
 		      	}
 			}
 		}
@@ -83,48 +76,64 @@ public class PRM extends AbstractNode {
 		
 		if (predictions.size() == 0) {
 			System.out.println("No predicions");
-			return "-1";
+			return new Prediction("-1",-1);
 		} else {
-			int predictionIndex = 0;
-		   	for(String prediction : predictions){
-		   		System.out.println("Prediction: "+prediction+" = "+predictionStrengths.get(predictionIndex)*100+"%");
-		   		if (predictionStrengths.get(predictionIndex) > largestPredictionStrength) {
-		   			largestPredictionStrength = predictionStrengths.get(predictionIndex);
+			//int predictionIndex = 0;
+		   	for(Prediction prediction : predictions){
+		   		System.out.println("Prediction: "+prediction.getPrediction()+" = "+prediction.getStrength()*100+"%"+" : "+prediction.getAssociatedPattern());
+		   		if (prediction.getStrength() > largestPredictionStrength) {
+		   			largestPredictionStrength = prediction.getStrength();
 		   		}
-		   		predictionIndex++;
 		   	}
 		}
 
-		//Select a prediction (first, find prediction with highest accuracy. Break ties by selecting prediction with most this.dataents.
-		int predictionIndex = 0;
+		//Select a prediction (first, find prediction with highest accuracy. Break ties by selecting longest prediction. TODO: break further ties randomly.
 		int largestPredictionLength = -1;
-		String selectedPrediction = null;
-		for(String prediction : predictions){
-			int predictionLength = countElements(prediction);
-	   		if (predictionStrengths.get(predictionIndex) == largestPredictionStrength && predictionLength > largestPredictionLength) {
+		Prediction selectedPrediction = null;
+		for(Prediction prediction : predictions){
+			int predictionLength = countElements(prediction.getPrediction());
+				if (prediction.getStrength() == largestPredictionStrength && predictionLength > largestPredictionLength) {
 	   			selectedPrediction = prediction;
 	   			largestPredictionLength = predictionLength;
 	   		}
-	   		predictionIndex++;
 	   	}
-		System.out.println("Selected Prediction: "+selectedPrediction+" = "+largestPredictionStrength*100 + "%");
+		System.out.println("Selected Prediction: "+selectedPrediction.getPrediction()+" = "+largestPredictionStrength*100 + "%");
 		return selectedPrediction;
 	}
+    
+    private Prediction findPredictionWithValue(LinkedList<Prediction> predictions, Prediction prediction) {
+    	for (Prediction aPrediction: predictions) {
+    		if (aPrediction.getPrediction().equals(prediction.getPrediction())) {
+    			return aPrediction;
+    		}
+    	}
+    	return null;
+	}
+
+	private boolean hasRepeatedPrediction(LinkedList<Prediction> predictions, Prediction prediction) {
+    	for (Prediction aPrediction: predictions) {
+    		if (aPrediction.getPrediction().equals(prediction.getPrediction())) {
+    			return true;
+    		}
+    	}
+    	return false;
+    }
 
 	private LinkedList<String> findPatterns() {
-    	LinkedList<String> patterns = new LinkedList<String>();;
-	
+
         for (int i = 2; i < this.data.length()/2; i+=1){
     	   String regex = "((\\d+\\s){"+i+"}).*\\1";
 	       Pattern p = Pattern.compile(regex);
            Matcher matcher = p.matcher(this.data);
            if (matcher.find()) {
-        	  patterns.add(matcher.group(1).trim());
+        	  if (!patterns.contains(matcher.group(1).trim())) {
+        		  patterns.add(matcher.group(1).trim());
+        	  }
         	  int j = 0;
         	  do {
 	        	  j = this.data.indexOf(' ',++j);
         		  if (matcher.find(j) && !patterns.contains(matcher.group(1).trim())) {
-   		       		  patterns.add(matcher.group(1).trim());
+   		       		  this.patterns.add(matcher.group(1).trim());
    		       	  }        	  
         	  } while (j < this.data.length()-i); //todo: this can probably end sooner
            } else {
@@ -149,8 +158,7 @@ public class PRM extends AbstractNode {
  	   
  	   return patterns;
 	}
-
-    
+   
 	private static int countElements(String string) {
 		return string.split(" ").length;
 	}
