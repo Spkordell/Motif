@@ -57,7 +57,7 @@ public class PRM extends AbstractNode {
 				//chop off the portion of the pattern that intersects with the end of the input, leaving just the prediction
 				int idx = pattern.length();
 				while (!this.data.endsWith(pattern.substring(0, idx--)));
-				Prediction prediction = new Prediction(pattern.substring(idx + 1),patterns.indexOf(pattern));
+				Prediction prediction = new Prediction(pattern.substring(idx + 1), pattern, patterns.indexOf(pattern));
 				
 				prediction.setStrength(determinePredictionStrength(this.data, pattern, prediction.getPrediction()));
 				
@@ -76,7 +76,7 @@ public class PRM extends AbstractNode {
 		
 		if (predictions.size() == 0) {
 			System.out.println("No predicions");
-			return new Prediction("-1",-1);
+			return new Prediction("-1","-1",-1);
 		} else {
 			//int predictionIndex = 0;
 		   	for(Prediction prediction : predictions){
@@ -87,7 +87,7 @@ public class PRM extends AbstractNode {
 		   	}
 		}
 
-		//Select a prediction (first, find prediction with highest accuracy. Break ties by selecting longest prediction. TODO: break further ties randomly.
+		//Select a prediction (first, find prediction with highest accuracy. Break ties by selecting longest prediction. TODO: instead of breaking ties, set multiple possible predictions.
 		int largestPredictionLength = -1;
 		Prediction selectedPrediction = null;
 		for(Prediction prediction : predictions){
@@ -98,6 +98,9 @@ public class PRM extends AbstractNode {
 	   		}
 	   	}
 		System.out.println("Selected Prediction: "+selectedPrediction.getPrediction()+" = "+largestPredictionStrength*100 + "%");
+		if (currentPrediction == null || currentPrediction.isMet() || currentPrediction.isFailed()) {
+			this.currentPrediction = selectedPrediction;
+		}
 		return selectedPrediction;
 	}
     
@@ -147,14 +150,43 @@ public class PRM extends AbstractNode {
  		   System.out.println("Pattern "+(index++)+": "+pattern);
  	   }
  	   
- 	   //set the nodes output to the name of the index of the last pattern which matches
- 	   //todo: problems will probably occur here when data is delivered to the node element by element as the output might fire more than necessary.
+ 	   //set the nodes output to the name of a pattern which has satisfied a prediction
 
- 	   if (patterns.size() > 0 && this.data.endsWith(patterns.getLast()+" ")) {  
- 		   this.setAxon(index-1);
+ 	   //determine if prediction has been satisfied 
+ 	   
+ 	   
+ 	   if (currentPrediction != null && !currentPrediction.isMet()) {
+	 	   if (this.data.endsWith(currentPrediction.getAssociatedPattern()+" ")) {
+	 		  this.setAxon(currentPrediction.getAssociatedPatternIndex());
+	 		  currentPrediction.hasBeenMet();
+	 	   } else {
+	 		   String regex;
+	 		   Pattern p;
+	 		   Matcher matcher;		
+	 		   regex = "\\s(";		   
+			   int i = 0;
+			   while ( (i = currentPrediction.getAssociatedPattern().indexOf(' ',++i)) != -1) {
+				   regex+=currentPrediction.getAssociatedPattern().substring(0,i).trim()+"|";
+			   }
+			   if (regex.endsWith("|")) {
+				   regex = regex.substring(0,regex.length()-1);
+			   }
+			   regex += ")\\s$";
+			   p = Pattern.compile(regex);        	        		
+			   matcher = p.matcher(this.data);
+			   if (!matcher.find()) {
+				   //The prediction was wrong, we got something we didn't expect
+				   currentPrediction.hasFailed();
+				   System.out.println("Prediction Failed");
+			   }
+			   this.setAxon(-1);
+	 	   }
  	   } else {
  		   this.setAxon(-1);
  	   }
+ 	   System.out.println("Prediction Successs: Node Output = "+this.getAxon());
+ 	   
+ 	   //need to add prediction fail test
  	   
  	   return patterns;
 	}
