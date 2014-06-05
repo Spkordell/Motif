@@ -30,10 +30,12 @@ public class PRM extends AbstractNode {
 	
 	private LinkedList<Prediction> mineSequentialPatterns() {	
         System.out.println("------"+this.data+"------");
-		return makePrediction(this.findPatterns());
+        this.updateOutput();
+        this.findPatterns();
+		return makePrediction();
 	}
     
-    private LinkedList<Prediction> makePrediction(LinkedList<String> patterns) {
+    private LinkedList<Prediction> makePrediction() {
     	
     	if (currentPredictions == null || anyPredictionMet() || allPredictionsFailed()) {
     		//not monitoring any predictions, search for new ones to monitor
@@ -43,7 +45,7 @@ public class PRM extends AbstractNode {
 			Pattern p;
 			Matcher matcher;
 			LinkedList<Prediction> predictions = new LinkedList<Prediction>();		
-			for(String pattern : patterns) {
+			for(String pattern : this.patterns) {
 				regex = "\\s(";
 				int i = 0;
 				while ( (i = pattern.indexOf(' ',++i)) != -1) {
@@ -61,7 +63,7 @@ public class PRM extends AbstractNode {
 					//chop off the portion of the pattern that intersects with the end of the input, leaving just the prediction
 					int idx = pattern.length();
 					while (!this.data.endsWith(pattern.substring(0, idx--)));
-					Prediction prediction = new Prediction(pattern.substring(idx + 1), pattern, patterns.indexOf(pattern));
+					Prediction prediction = new Prediction(pattern.substring(idx + 1), pattern, this.patterns.indexOf(pattern));
 					
 					prediction.setStrength(determinePredictionStrength(this.data, pattern, prediction.getPrediction()));
 					
@@ -153,35 +155,12 @@ public class PRM extends AbstractNode {
     	return false;
     }
 
-	private LinkedList<String> findPatterns() {
-
-		String s;
-        for (int i = 2; i < this.data.length()/2; i+=1){
-    	   String regex = "((\\d+\\s){"+i+"}).*\\1";
-	       Pattern p = Pattern.compile(regex);
-           Matcher matcher = p.matcher(this.data);
-           int j = 0;
-           while (matcher.find(j)) {
-        	   if (!patterns.contains(s = matcher.group(1).trim())) {
-        		   patterns.add(s);
-        	   }
-        	   j = matcher.start()+1; //j one character past pattern
-        	   j = this.data.indexOf(' ',j); //j is moved to the following space, where the next pattern element is
-           }
-       }
-  	   //we're done, print all the patterns we found
- 	   int index = 0;
- 	   for(String pattern : patterns){
- 		   System.out.println("Pattern "+(index++)+": "+pattern);
- 	   }
- 	   
- 	   //set the nodes output to the name of a pattern which has satisfied a prediction
-
- 	   //determine if prediction has been satisfied 
- 	   
- 	   
- 	   if (currentPredictions != null && !anyPredictionMet()) {
- 		   for (Prediction prediction: this.currentPredictions) {
+	
+	private void updateOutput() {
+	   //set the nodes output to the name of a pattern which has satisfied a prediction
+	   //determine if prediction has been satisfied 	   
+	   if (currentPredictions != null && !anyPredictionMet()) {
+		   for (Prediction prediction: this.currentPredictions) {
 		 	   if (this.data.endsWith(prediction.getAssociatedPattern()+" ")) {
 		 		  this.setAxon(prediction.getAssociatedPatternIndex());
 		 		  prediction.hasBeenMet();
@@ -210,24 +189,45 @@ public class PRM extends AbstractNode {
 				   this.setAxon(-1);
 				   System.out.println("Node Output = "+this.getAxon());
 		 	   }
- 		   }
+		   }
 	 	   if (!allPredictionsFailed() && this.getAxon() == -1) {
 	 	 	   System.out.println("Waiting for Predictions to be met");
 	 	 	   
 	 	 	   for (Prediction prediction: this.currentPredictions) {
 	 	 		   System.out.println("Current Prediction: "+prediction.getPrediction() +":  failed? = "+prediction.isFailed());
 	 	 	   }
-	 	 	   //TODO: any time I get another data point, it's posisble a longer predcition could be found that has a higher strength. Might need to find a way to check for that rather thatn jsut waiting for this one to be met
-	 	 	   
+	 	 	   //TODO: any time I get another data point, it's posisble a longer predcition could be found that has a higher strength. Might need to find a way to check for that rather thatn jsut waiting for this one to be met	   
 	 	   }
- 	   } else {
- 		   this.setAxon(-1);
- 		   System.out.println("Node Output = "+this.getAxon());
- 	   }
-
-
- 	   
- 	   return patterns;
+	   } else {
+		   this.setAxon(-1);
+		   System.out.println("Node Output = "+this.getAxon());
+	   }
+	}
+	
+	
+	private void findPatterns() {
+    	if (currentPredictions == null || anyPredictionMet() || allPredictionsFailed()) {
+    		//not monitoring any predictions, need to look for new patterns
+			String s;
+		    for (int i = 2; i < this.data.length()/2; i+=1){
+			   String regex = "((\\d+\\s){"+i+"}).*\\1";
+		       Pattern p = Pattern.compile(regex);
+		       Matcher matcher = p.matcher(this.data);
+		       int j = 0;
+		       while (matcher.find(j)) {
+		    	   if (!this.patterns.contains(s = matcher.group(1).trim())) {
+		    		   this.patterns.add(s);
+		    	   }
+		    	   j = matcher.start()+1; //j one character past pattern
+		    	   j = this.data.indexOf(' ',j); //j is moved to the following space, where the next pattern element is
+		       }
+		   }
+		   //we're done, print all the patterns we found
+		   int index = 0;
+		   for(String pattern : this.patterns){
+			   System.out.println("Pattern "+(index++)+": "+pattern);
+		   }
+    	}
 	}
    
 	@SuppressWarnings("unused")
