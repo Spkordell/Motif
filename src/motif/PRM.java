@@ -3,6 +3,7 @@
  */
 package motif;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -14,13 +15,13 @@ import java.util.regex.Pattern;
 public class PRM extends AbstractNode {
 
 	private String data;
-	private LinkedList<String> patterns;
+	private ArrayList<String> patterns;
 	private LinkedList<Prediction> currentPredictions;
 
 	public PRM() {
 		super();
 		this.data = "";
-		this.patterns = new LinkedList<String>();
+		this.patterns = new ArrayList<String>(1000);
 	}
 	
 	public LinkedList<Prediction> step() {
