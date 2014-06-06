@@ -17,6 +17,8 @@ public class PRM extends AbstractNode {
 	private String data;
 	private ArrayList<String> patterns;
 	private LinkedList<Prediction> currentPredictions;
+	
+	private int input;
 
 	public PRM() {
 		super();
@@ -24,21 +26,22 @@ public class PRM extends AbstractNode {
 		this.patterns = new ArrayList<String>(3000);
 	}
 	
-	public void step() {
-		int input = this.getDendrites().getFirst().getAxon();
+	public void stepOne() {
+		input = this.getDendrites().getFirst().getAxon(); //todo: for now only using the first input, heavy modifications will be needed to work with multiple inputs
 		if (input != -1) {
-			this.data+=input+" "; //todo: for now only using the first input, heavy modifications will be needed to work with multiple inputs
-			this.mineSequentialPatterns();
+			this.data+=input+" ";
+	        System.out.println("------"+this.data+"------");        
+	        this.updateOutput();
 		}
 	}
 	
-	private void mineSequentialPatterns() {	
-        System.out.println("------"+this.data+"------");
-        this.updateOutput();
-        this.findPatterns();
-		this.makePrediction();
+	public void stepTwo() {
+		if (input != -1) {
+			this.findPatterns();
+			this.makePrediction();	
+		}
 	}
-    
+	   
     private LinkedList<Prediction> makePrediction() {
     	
     	if (currentPredictions == null || anyPredictionMet() || allPredictionsFailed()) {
