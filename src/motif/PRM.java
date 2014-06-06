@@ -21,19 +21,22 @@ public class PRM extends AbstractNode {
 	public PRM() {
 		super();
 		this.data = "";
-		this.patterns = new ArrayList<String>(1000);
+		this.patterns = new ArrayList<String>(3000);
 	}
 	
-	public LinkedList<Prediction> step() {
-		this.data+=this.getDendrites().getFirst().getAxon()+" "; //todo: for now only using the first input, heavy modifications will be needed to work with multiple inputs
-		return this.mineSequentialPatterns();
+	public void step() {
+		int input = this.getDendrites().getFirst().getAxon();
+		if (input != -1) {
+			this.data+=input+" "; //todo: for now only using the first input, heavy modifications will be needed to work with multiple inputs
+			this.mineSequentialPatterns();
+		}
 	}
 	
-	private LinkedList<Prediction> mineSequentialPatterns() {	
+	private void mineSequentialPatterns() {	
         System.out.println("------"+this.data+"------");
         this.updateOutput();
         this.findPatterns();
-		return makePrediction();
+		this.makePrediction();
 	}
     
     private LinkedList<Prediction> makePrediction() {
@@ -59,13 +62,13 @@ public class PRM extends AbstractNode {
 				p = Pattern.compile(regex);        	        		
 				matcher = p.matcher(this.data);
 				if (matcher.find()) {
-					//This pattern matches some part of the end of the input
-		
+					//This pattern matches some part of the end of the input		
 					//chop off the portion of the pattern that intersects with the end of the input, leaving just the prediction
+					
 					int idx = pattern.length();
 					while (!this.data.endsWith(pattern.substring(0, idx--)));
-					Prediction prediction = new Prediction(pattern.substring(idx + 1), pattern, this.patterns.indexOf(pattern));
-					
+
+					Prediction prediction = new Prediction(pattern.substring(idx + 1), pattern, this.patterns.indexOf(pattern));					
 					prediction.setStrength(determinePredictionStrength(this.data, pattern, prediction.getPrediction()));
 					
 					if (!hasRepeatedPrediction(predictions,prediction)) { //remove repeated predictions
