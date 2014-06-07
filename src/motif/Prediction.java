@@ -16,6 +16,7 @@ public class Prediction {
 	private float confidence;
 	private boolean failed;
 	private boolean fromAbove;
+	private float partialMatchPercentage;
 	
 	public Prediction(String prediction, String associatedPattern, int associatedPatternIndex) {
 		this.prediction = prediction;
@@ -24,6 +25,7 @@ public class Prediction {
 		this.predictionMet = false;
 		this.failed = false;
 		this.setFromAbove(false);
+		this.partialMatchPercentage = -1;
 	}
 	
 	public Prediction(String prediction, float confidence) {
@@ -32,6 +34,7 @@ public class Prediction {
 		this.predictionMet = false;
 		this.failed = false;
 		this.setFromAbove(false);
+		this.partialMatchPercentage = -1;
 	}
 
 	public String getPrediction() {
@@ -83,5 +86,13 @@ public class Prediction {
 		if (this.fromAbove == true) {
 			this.associatedPatternIndex = -1;
 		}
+	}
+
+	public float getPartialMatchPercentage() {
+		return partialMatchPercentage;
+	}
+
+	public void setPartialMatchPercentage(float partialMatchPercentage) {
+		this.partialMatchPercentage = partialMatchPercentage;
 	}
 }
