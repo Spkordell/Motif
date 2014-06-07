@@ -12,6 +12,7 @@ public class AbstractNode {
 	public AbstractNode() {
 		this.dendrites = new LinkedList<AbstractNode>();
 		this.returns = new LinkedList<PRM>();
+		this.axon = -1;
 	}
 
 	public int getAxon() {
