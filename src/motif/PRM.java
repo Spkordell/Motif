@@ -301,9 +301,12 @@ public class PRM extends AbstractNode {
     		//not monitoring any predictions, need to look for new patterns
 			String s;
 		    for (int i = 2; i < this.data.length()/2; i+=1){
+			   /*
 			   String regex = "((\\d+\\s){"+i+"}).*\\1";
 		       Pattern p = Pattern.compile(regex);
 		       Matcher matcher = p.matcher(this.data);
+		       */
+		       Matcher matcher = PatternSearchRegexCache.getInstance().getRegex(i).matcher(this.data);
 		       int j = 0;
 		       while (matcher.find(j)) {
 		    	   if (!this.patterns.contains(s = matcher.group(1).trim())) {
