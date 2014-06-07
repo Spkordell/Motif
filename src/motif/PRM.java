@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
 public class PRM extends AbstractNode {
 
 	private String data;
-	private ArrayList<String> patterns;
+	private ArrayList<String> patterns; //TODO: contains is used a lot on this object and is probably the limiting factor for performance. Consider using a different data type.
 	private LinkedList<Prediction> currentPredictions;
 	
 	private static final String elementRegex = "(\\d+)\\s*"; ; 
