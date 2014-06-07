@@ -6,10 +6,12 @@ import java.util.LinkedList;
 public class AbstractNode {
 
 	private int axon; //todo: at the moment, only being used by PRM, move if not needed by others
-	private LinkedList<AbstractNode> dendrites;
+	private LinkedList<AbstractNode> dendrites; //used to send outputs
+	private LinkedList<PRM> returns; //used to revieve incoming predictions
 	
 	public AbstractNode() {
 		this.dendrites = new LinkedList<AbstractNode>();
+		this.returns = new LinkedList<PRM>();
 	}
 
 	public int getAxon() {
@@ -24,7 +26,15 @@ public class AbstractNode {
 		this.dendrites.add(node);
 	}
 	
+	public void connectReturnTo(PRM node) {
+		this.returns.add(node);
+	}
+	
 	public LinkedList<AbstractNode> getDendrites() {
 		return this.dendrites;
+	}
+	
+	public LinkedList<PRM> getReturns() {
+		return this.returns;
 	}
 }

@@ -19,6 +19,7 @@ public class PRM extends AbstractNode {
 	private LinkedList<Prediction> currentPredictions;
 	
 	private int input;
+	private LinkedList<Prediction> predictionsFromAbove;
 
 	public PRM() {
 		super();
@@ -41,8 +42,54 @@ public class PRM extends AbstractNode {
 			this.makePrediction();	
 		}
 	}
-	   
-    private LinkedList<Prediction> makePrediction() {
+	
+	public LinkedList<Prediction> getCurrentPredictions() {
+		//TODO: Two nodes in series are not very effective, the second node doesn't get to do much. For testing, we will simulate a prediction, this should be removed later.
+		LinkedList<Prediction> testPredictions = new LinkedList<Prediction>();
+		testPredictions.add(new Prediction("0 1 2", "4 5 0 1", 0));
+		testPredictions.add(new Prediction("0 2", "4 5 0 2", 1));
+		testPredictions.get(0).setConfidence(1);
+		testPredictions.get(1).setConfidence((float) 0.5);
+		return testPredictions;
+		
+		
+		//TODO: should also remove the part that has already been matched, else confusion will ensue (might need to do this on the lower node too?)
+		//return this.currentPredictions;
+	}
+	
+	private void getPredictionsFromAbove() {
+		//
+		
+		this.predictionsFromAbove = new LinkedList<Prediction>();
+		
+		//for testing, waiting will cause the prediction when there are enough patterns (remove the below if later)
+		if (this.patterns.size() >= 3) {
+			if (this.getReturns().size() > 0) {
+				//TODO: At some point, this will have to take into account multiple returned predictions which may or may not conflict
+				LinkedList<Prediction> unParsedPredictionsFromAbove = this.getReturns().getFirst().getCurrentPredictions();
+
+				//build a regex that will sub in the patterns for the predicions
+				String regex = "\\s*([0-9]+)\\s*";	
+				Pattern p = Pattern.compile(regex);
+				
+				for (Prediction prediction : unParsedPredictionsFromAbove) {
+					Matcher matcher = p.matcher(prediction.getPrediction());
+					StringBuffer sb = new StringBuffer();
+					while(matcher.find()) {
+					    matcher.appendReplacement(sb, this.patterns.get(Integer.parseInt(matcher.group(1)))+' ');
+					}
+					matcher.appendTail(sb);
+					System.out.println("Prediction: "+sb.toString()+" = "+prediction.getConfidence()*100+"% : From Above");
+					this.predictionsFromAbove.add(new Prediction(sb.toString().trim(),prediction.getConfidence()));
+					this.predictionsFromAbove.getLast().setFromAbove(true);
+				}
+			}
+		}
+	}
+	
+    private LinkedList<Prediction> makePrediction() { 	
+    	
+    	getPredictionsFromAbove();
     	
     	if (currentPredictions == null || anyPredictionMet() || allPredictionsFailed()) {
     		//not monitoring any predictions, search for new ones to monitor
@@ -51,7 +98,7 @@ public class PRM extends AbstractNode {
 			String regex;
 			Pattern p;
 			Matcher matcher;
-			LinkedList<Prediction> predictions = new LinkedList<Prediction>();		
+			LinkedList<Prediction> predictions = new LinkedList<Prediction>();
 			for(String pattern : this.patterns) {
 				regex = "\\s(";
 				int i = 0;
@@ -72,15 +119,15 @@ public class PRM extends AbstractNode {
 					while (!this.data.endsWith(pattern.substring(0, idx--)));
 
 					Prediction prediction = new Prediction(pattern.substring(idx + 1), pattern, this.patterns.indexOf(pattern));					
-					prediction.setStrength(determinePredictionStrength(this.data, pattern, prediction.getPrediction()));
+					prediction.setConfidence(determinePredictionStrength(this.data, pattern, prediction.getPrediction()));
 					
 					if (!hasRepeatedPrediction(predictions,prediction)) { //remove repeated predictions
 			   	   		predictions.add(prediction);
 			      	} else {
 			      		//compare strengths and keep the largest	      		
 			      		Prediction predictionInList = findPredictionWithValue(predictions,prediction);
-			      		if (predictionInList.getStrength() <  prediction.getStrength()) {
-			      			predictionInList.setStrength(prediction.getStrength());
+			      		if (predictionInList.getConfidence() <  prediction.getConfidence()) {
+			      			predictionInList.setConfidence(prediction.getConfidence());
 			      		}		      		
 			      	}
 				}
@@ -88,14 +135,14 @@ public class PRM extends AbstractNode {
 			
 			float largestPredictionStrength = -1;			
 			if (predictions.size() == 0) {
-				System.out.println("No predicions");
+				System.out.println("No predictions");
 				return new LinkedList<Prediction>();
 			} else {
 				//int predictionIndex = 0;
 			   	for(Prediction prediction : predictions){
-			   		System.out.println("Prediction: "+prediction.getPrediction()+" = "+prediction.getStrength()*100+"%"+" : "+prediction.getAssociatedPatternIndex());
-			   		if (prediction.getStrength() > largestPredictionStrength) {
-			   			largestPredictionStrength = prediction.getStrength();
+			   		System.out.println("Prediction: "+prediction.getPrediction()+" = "+prediction.getConfidence()*100+"%"+" : " + prediction.getAssociatedPatternIndex());			 
+			   		if (prediction.getConfidence() > largestPredictionStrength) {
+			   			largestPredictionStrength = prediction.getConfidence();
 			   		}
 			   	}
 			}
@@ -104,7 +151,7 @@ public class PRM extends AbstractNode {
 			//TODO: currently sending multiple predictions only if the strengths tie perfectly. Might want to send predictions for close matches too.
 			LinkedList<Prediction> selectedPredictions = new LinkedList<Prediction>();		
 			for(Prediction prediction : predictions){
-				if (prediction.getStrength() == largestPredictionStrength) {
+				if (prediction.getConfidence() == largestPredictionStrength) {
 					//Remove predictions which which have overlap (want just the longest version of each predicion)
 					for (Prediction aPrediction : selectedPredictions) {
 						if (prediction.getPrediction().startsWith(aPrediction.getPrediction()+" ")) {
@@ -118,8 +165,7 @@ public class PRM extends AbstractNode {
 			for(Prediction prediction : selectedPredictions){
 				System.out.println("Selected Prediction: "+prediction.getPrediction()+" = "+largestPredictionStrength*100 + "%");
 			}
-		
-		
+			
 			//save a new prediction to watch for
 			this.currentPredictions = selectedPredictions;
 		}			
@@ -197,9 +243,9 @@ public class PRM extends AbstractNode {
 				   System.out.println("Node Output = "+this.getAxon());
 		 	   }
 		   }
+		   
 	 	   if (!allPredictionsFailed() && this.getAxon() == -1) {
-	 	 	   System.out.println("Waiting for Predictions to be met");
-	 	 	   
+	 	 	   System.out.println("Waiting for Predictions to be met");	 	 	
 	 	 	   for (Prediction prediction: this.currentPredictions) {
 	 	 		   System.out.println("Current Prediction: "+prediction.getPrediction() +":  failed? = "+prediction.isFailed());
 	 	 	   }

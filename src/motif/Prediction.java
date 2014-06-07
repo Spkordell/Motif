@@ -13,8 +13,9 @@ public class Prediction {
 	private boolean predictionMet;
 	private String associatedPattern;
 	private int associatedPatternIndex;
-	private float strength;
+	private float confidence;
 	private boolean failed;
+	private boolean fromAbove;
 	
 	public Prediction(String prediction, String associatedPattern, int associatedPatternIndex) {
 		this.prediction = prediction;
@@ -22,8 +23,17 @@ public class Prediction {
 		this.associatedPatternIndex = associatedPatternIndex;
 		this.predictionMet = false;
 		this.failed = false;
+		this.setFromAbove(false);
 	}
 	
+	public Prediction(String prediction, float confidence) {
+		this.prediction = prediction;
+		this.confidence = confidence;
+		this.predictionMet = false;
+		this.failed = false;
+		this.setFromAbove(false);
+	}
+
 	public String getPrediction() {
 		return this.prediction;
 	}
@@ -44,12 +54,12 @@ public class Prediction {
 		return this.associatedPatternIndex;
 	}
 
-	public float getStrength() {
-		return this.strength;
+	public float getConfidence() {
+		return this.confidence;
 	}
 
-	public void setStrength(float strength) {
-		this.strength = strength;
+	public void setConfidence(float strength) {
+		this.confidence = strength;
 	}
 
 	public void hasFailed() {
@@ -62,5 +72,16 @@ public class Prediction {
 	
 	public String toString() {
 		return this.prediction;
+	}
+
+	public boolean isFromAbove() {
+		return fromAbove;
+	}
+
+	public void setFromAbove(boolean fromAbove) {
+		this.fromAbove = fromAbove;
+		if (this.fromAbove == true) {
+			this.associatedPatternIndex = -1;
+		}
 	}
 }

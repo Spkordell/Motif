@@ -22,16 +22,22 @@ public class Network {
 		//connect the PRMs
     	prms.get(0).connectDendriteTo(firstGI);
     	prms.get(1).connectDendriteTo(prms.get(0));	
+    	
+    	prms.get(0).connectReturnTo(prms.get(1));
 	}
 	
 	public void start() {
     	//send all the buffered data
+		int index;
     	while (!firstGI.isEmpty()) {
+    		index = 1;
     		for (PRM prm : prms) {
+    			System.out.println("=====node " + (index++) + "====");
     			prm.stepOne();
     		}
     		Collections.reverse(prms); //TODO: find a better way that doesn't involve reversing the list
     		for (PRM prm : prms) {
+    			System.out.println("====node " + (--index) + "====");
     			prm.stepTwo();
     		}
     		Collections.reverse(prms);
