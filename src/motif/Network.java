@@ -12,7 +12,8 @@ public class Network {
 		
 		//Make an input node with some test data
 		firstGI = new GI();
-    	int[] testData = {1, 2, 1, 2, 1, 3, 1, 3, 1, 2, 1, 2, 1, 3, 1, 3, 1};
+    	//int[] testData = {1, 2, 1, 2, 1, 3, 1, 3, 1, 2, 1, 2, 1, 3, 1, 3, 1};
+    	int[] testData = {1, 2, 1, 2, 1, 3, 1, 3, 1, 2, 1, 2, 1, 3, 1, 3, 1, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4 , 5, 3, 2, 1, 4, 3, 2, 1, 4, 5, 4, 3, 2, 6, 1, 2, 1, 2, 1, 3, 1, 3, 1, 2, 1, 2, 1, 3, 1, 3, 1, 1, 2, 3, 4};
     	firstGI.addData(testData);
 		
 		//make some PRMs

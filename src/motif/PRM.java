@@ -28,6 +28,8 @@ public class PRM extends AbstractNode {
 		super();
 		this.data = "";
 		this.patterns = new ArrayList<String>(3000);
+		
+		this.currentPredictions = new LinkedList<Prediction>();
 	}
 	
 	public void stepOne() {
@@ -47,52 +49,39 @@ public class PRM extends AbstractNode {
 	}
 	
 	public LinkedList<Prediction> getCurrentPredictions() {
-		//TODO: Two nodes in series are not very effective, the second node doesn't get to do much. For testing, we will simulate a prediction, this should be removed later.
-		LinkedList<Prediction> testPredictions = new LinkedList<Prediction>();
-		testPredictions.add(new Prediction("1 0 2", "4 5 0 1", 0));
-		testPredictions.add(new Prediction("1 2", "4 5 0 2", 1));
-		testPredictions.get(0).setConfidence(1);
-		testPredictions.get(1).setConfidence((float) 0.5);
-		return testPredictions;
-		
-		
-		//TODO: should also remove the part that has already been matched, else confusion will ensue (might need to do this on the lower node too?)
-		//return this.currentPredictions;
+		return this.currentPredictions;
 	}
 	
 	private void getPredictionsFromAbove() {
-
 		this.predictionsFromAbove = new LinkedList<Prediction>();
-		
-		//for testing, waiting will cause the prediction when there are enough patterns (remove the below if later)
-		if (this.patterns.size() >= 3) {
-			if (this.getReturns().size() > 0) {
-				//TODO: At some point, this will have to take into account multiple returned predictions which may or may not conflict
-				LinkedList<Prediction> unParsedPredictionsFromAbove = this.getReturns().getFirst().getCurrentPredictions();
+				
+		if (this.getReturns().size() > 0) {
+			LinkedList<Prediction> unParsedPredictionsFromAbove = this.getReturns().getFirst().getCurrentPredictions();
 
-				//sub in the patterns for the predicions				
-				for (Prediction prediction : unParsedPredictionsFromAbove) {
-					Matcher matcher = elementPattern.matcher(prediction.getPrediction());
-					StringBuffer sb = new StringBuffer();
-					while(matcher.find()) {
-					    matcher.appendReplacement(sb, this.patterns.get(Integer.parseInt(matcher.group(1)))+' ');
-					}
-					matcher.appendTail(sb);
-					System.out.println("Prediction: "+sb.toString()+" = "+prediction.getConfidence()*100+"% : From Above");
-					this.predictionsFromAbove.add(new Prediction(sb.toString().trim(),prediction.getConfidence()));
-					this.predictionsFromAbove.getLast().setFromAbove(true);
+			//sub in the patterns for the predicions				
+			for (Prediction prediction : unParsedPredictionsFromAbove) {
+				Matcher matcher = elementPattern.matcher(prediction.getPrediction());
+				StringBuffer sb = new StringBuffer();
+				while(matcher.find()) {
+				    matcher.appendReplacement(sb, this.patterns.get(Integer.parseInt(matcher.group(1)))+' ');
 				}
+				matcher.appendTail(sb);
+				System.out.println("Prediction: "+sb.toString()+" = "+prediction.getConfidence()*100+"% : From Above");
+				this.predictionsFromAbove.add(new Prediction(sb.toString().trim(),prediction.getConfidence()));
+				this.predictionsFromAbove.getLast().setFromAbove(true);
 			}
 		}
+		
 	}
 	
     private LinkedList<Prediction> makePrediction() { 	
-    	
-    	getPredictionsFromAbove();
-    	
-    	if (currentPredictions == null || anyPredictionMet() || allPredictionsFailed()) {
+
+    	if (currentPredictions.isEmpty() || anyPredictionMet() || allPredictionsFailed()) {
     		//not monitoring any predictions, search for new ones to monitor
-	    		
+    		
+    		//get any information the above PRM has which might be useful
+        	getPredictionsFromAbove();
+        	
 			//make a prediction as to what might come next	 
 			String regex;
 			Pattern p;
@@ -113,7 +102,7 @@ public class PRM extends AbstractNode {
 				if (matcher.find()) {
 					//This pattern matches some part of the end of the input		
 					//chop off the portion of the pattern that intersects with the end of the input, leaving just the prediction
-					//TODO: Should we allow patterns into the list if they are compatible with "predictions from above"?
+					//TODO: allow patterns into the list if they are compatible with "predictions from above"
 					
 					
 					int idx = pattern.length();
@@ -137,6 +126,7 @@ public class PRM extends AbstractNode {
 			float largestPredictionConfidence = -1;			
 			if (predictions.size() == 0) {
 				System.out.println("No predictions");
+				this.currentPredictions = new LinkedList<Prediction>();
 				return new LinkedList<Prediction>();
 			} else {
 				//int predictionIndex = 0;
@@ -216,7 +206,7 @@ public class PRM extends AbstractNode {
 		
 	   //set the nodes output to the name of a pattern which has satisfied a prediction
 	   //determine if prediction has been satisfied 	   
-	   if (this.currentPredictions != null && !anyPredictionMet()) {
+	   if (!this.currentPredictions.isEmpty() && !anyPredictionMet()) {
 		   for (Prediction prediction: this.currentPredictions) {
 		 	   if (this.data.endsWith(prediction.getAssociatedPattern()+" ")) {
 		 		  this.setAxon(prediction.getAssociatedPatternIndex());
@@ -243,7 +233,7 @@ public class PRM extends AbstractNode {
 					   prediction.hasFailed();
 					   System.out.println("Prediction Failed");
 				   }
-				   this.setAxon(-1); //TODO: this set might interfere with new stuff above. Double check.
+				   this.setAxon(-1);
 				   System.out.println("Node Output = "+this.getAxon());
 		 	   }
 		   }
@@ -255,8 +245,7 @@ public class PRM extends AbstractNode {
 	 	 	   }
 	 	 	   //TODO: any time I get another data point, it's posisble a longer prediction could be found that has a higher strength. Might need to find a way to check for that rather thatn jsut waiting for this one to be met	   
 	 	   }
-	 	   
-	 	   
+	 	   	 	   
 	 	  if (this.getAxon() == -1 && allPredictionsFailed()) {
 	 		 //at this point, we know there aren't any perfect matches, but perhaps one of them is "close enough" and we can still claim it to have been met even though it technically failed
 	 		  
@@ -299,13 +288,7 @@ public class PRM extends AbstractNode {
 		 		 }
 	 		 }
 	 	  }
-	 	  
-	 	  
-	 	  
-	 	  
-	 	  
-	 	  
-	 	  
+	 	   	  	 	  
 	   } else {
 		   this.setAxon(-1);
 		   System.out.println("Node Output = "+this.getAxon());
@@ -314,7 +297,7 @@ public class PRM extends AbstractNode {
 	
 	
 	private void findPatterns() {
-    	if (currentPredictions == null || anyPredictionMet() || allPredictionsFailed()) {
+    	if (this.currentPredictions.isEmpty() || anyPredictionMet() || allPredictionsFailed()) {
     		//not monitoring any predictions, need to look for new patterns
 			String s;
 		    for (int i = 2; i < this.data.length()/2; i+=1){
@@ -370,12 +353,11 @@ public class PRM extends AbstractNode {
      		//System.out.println(predictionFromAbove + "::" + prediction);
      		if (prediction.startsWith(predictionFromAbove.getPrediction()) || predictionFromAbove.getPrediction().startsWith(prediction)) {
      			//A weighted average between the confidece of this prediction and the confidence of the predictions from above with those from above having more weight
-     			//TODO: might want to do this differently, especially when multiple predictions are coming down
      			predictionConfidence = (PERFECT_MATCH_CURRENT_LEVEL_WEIGHT*predictionConfidence + PERFECT_MATCH_FROM_ABOVE_WEIGHT*predictionFromAbove.getConfidence())/(PERFECT_MATCH_CURRENT_LEVEL_WEIGHT+PERFECT_MATCH_FROM_ABOVE_WEIGHT);
      			//System.out.println(prediction+" modified by perfect");
-     		} else if (prediction.contains(predictionFromAbove.getPrediction())) {
-     			predictionConfidence = (SHIFT_MATCH_CURRENT_LEVEL_WEIGHT*predictionConfidence + SHIFT_MATCH_FROM_ABOVE_WEIGHT*predictionFromAbove.getConfidence())/(PERFECT_MATCH_CURRENT_LEVEL_WEIGHT+PERFECT_MATCH_FROM_ABOVE_WEIGHT);
-     			//System.out.println(prediction+" modified by shift");
+     		} else if (prediction.contains(predictionFromAbove.getPrediction()) || predictionFromAbove.getPrediction().contains(prediction)) {
+     			System.out.println("prediction "+prediction+" modified by shift from " + predictionConfidence + " to " + (SHIFT_MATCH_CURRENT_LEVEL_WEIGHT*predictionConfidence + SHIFT_MATCH_FROM_ABOVE_WEIGHT*predictionFromAbove.getConfidence())/(SHIFT_MATCH_CURRENT_LEVEL_WEIGHT+SHIFT_MATCH_FROM_ABOVE_WEIGHT));
+     			predictionConfidence = (SHIFT_MATCH_CURRENT_LEVEL_WEIGHT*predictionConfidence + SHIFT_MATCH_FROM_ABOVE_WEIGHT*predictionFromAbove.getConfidence())/(SHIFT_MATCH_CURRENT_LEVEL_WEIGHT+SHIFT_MATCH_FROM_ABOVE_WEIGHT);
      		} else {     						
 				Matcher levelMatcher = elementPattern.matcher(prediction);
 				Matcher aboveMatcher = elementPattern.matcher(predictionFromAbove.getPrediction());			
