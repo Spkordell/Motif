@@ -30,7 +30,11 @@ public class Main {
         //frame.setVisible(true);
     	
     	Network network = new Network();
-    	network.start();
+    	try {
+    		network.start();
+    	} catch (TooManyDendritesException e) {
+    		e.printStackTrace();
+    	}
     }
     
 	public static void main(String[] args) {

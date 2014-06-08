@@ -29,6 +29,8 @@ public class PRM extends AbstractNode {
 	private boolean allDendritesWereReady;
 	
 	private DBSCAN dbscan;
+	private boolean classiferEnabled;
+	private boolean caughtRuntimeException;
 	
 	private static final String elementRegex = "(\\d+)\\s*"; ; 
 	private static final Pattern elementPattern = Pattern.compile(elementRegex);
@@ -41,13 +43,17 @@ public class PRM extends AbstractNode {
 		this.dbscan = new DBSCAN();
 		this.frames = new LinkedList<DataPoint>();
 		this.allDendritesWereReady = false;
+		this.caughtRuntimeException = false;
+		this.classiferEnabled = true;
 	}
 	
-	public void stepOne() {	
+	public void stepOne() throws TooManyDendritesException {	
 		if (this.allDendritesWereReady = allDendritesReady()) {
 			this.classify(); //todo, probably want a way to turn this off eventually, for cells with only one input in which clustering isn't needed
-			System.out.println("------"+this.data+"------");
-			this.updateOutput();
+			if (!this.caughtRuntimeException) {
+				System.out.println("------"+this.data+"------");
+				this.updateOutput();
+			}
 		}
 	}
 	
@@ -60,30 +66,45 @@ public class PRM extends AbstractNode {
 		return true;
 	}
 
-	private void classify() {		
+	private void classify() throws TooManyDendritesException {
 		final int MINPOINTS = 2;
  
-		//prepare the incoming data
-		LinkedList<Double> dendriteValues = new LinkedList<Double>();			
-		for (AbstractNode d : this.getDendrites()) {
-			dendriteValues.add((double) d.getAxon());
-		}		
-		Vec frame = new DenseVector(dendriteValues);
-		frames.add(new DataPoint(frame,null,null));
-		DataSet dataset = new SimpleDataSet(frames);
-		
-		if (frames.size() > 2) {
-			int[] designations = dbscan.cluster(dataset,MINPOINTS,(int[])null);			
-			StringBuilder buffer = new StringBuilder();
-			for (int designation : designations) {				
-				buffer.append(designation); buffer.append(' ');
-			}	
-			this.data = buffer.toString();
+		if (this.classiferEnabled) {
+			//prepare the incoming data
+			LinkedList<Double> dendriteValues = new LinkedList<Double>();			
+			for (AbstractNode d : this.getDendrites()) {
+				dendriteValues.add((double) d.getAxon());
+			}		
+			Vec frame = new DenseVector(dendriteValues);
+			frames.add(new DataPoint(frame,null,null));
+			DataSet dataset = new SimpleDataSet(frames);
+			
+			if (frames.size() > 2) {
+				try {
+					int[] designations = dbscan.cluster(dataset,MINPOINTS,(int[])null);			
+					StringBuilder buffer = new StringBuilder();
+					for (int designation : designations) {				
+						buffer.append(designation); buffer.append(' ');
+					}	
+					this.data = buffer.toString();
+					this.caughtRuntimeException = false;
+				} catch (RuntimeException e) {
+					//This seems to be a bug in the library. Just going to compensate for it
+					System.out.println("Exception");
+					this.caughtRuntimeException = true;
+				}
+			}
+		} else {
+			if (this.getDendrites().size() > 1) {
+				throw new TooManyDendritesException(); //TODO: fix exception name
+			} else {
+				this.data+=this.getDendrites().getFirst().getAxon()+" ";
+			}
 		}
 	}
 
 	public void stepTwo() {
-		if (this.allDendritesWereReady) {
+		if (this.allDendritesWereReady && !this.caughtRuntimeException) {
 			this.findPatterns();
 			this.makePrediction();	
 		}
@@ -420,6 +441,14 @@ public class PRM extends AbstractNode {
      		}
      	}    	
     	return predictionConfidence;
+	}
+
+	public boolean isClassiferEnabled() {
+		return classiferEnabled;
+	}
+
+	public void setClassiferEnabled(boolean classiferDisabled) {
+		this.classiferEnabled = classiferDisabled;
 	}
 	
 }
