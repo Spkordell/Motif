@@ -38,4 +38,8 @@ public class AbstractNode {
 	public LinkedList<PRM> getReturns() {
 		return this.returns;
 	}
+
+	public int checkAxon() {
+		return this.axon;
+	}
 }

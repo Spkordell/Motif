@@ -28,6 +28,10 @@ public class GI extends AbstractNode {
 	public int getAxon() {
 		return this.data.poll();
 	}
+	
+	public int checkAxon() {
+		return this.data.peek();
+	}
 
 	public boolean isEmpty() {
 		return this.data.isEmpty();

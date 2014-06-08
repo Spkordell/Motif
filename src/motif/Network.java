@@ -17,7 +17,7 @@ public class Network {
 		
     	//int[] testData = {1, 2, 1, 2, 1, 3, 1, 3, 1, 2, 1, 2, 1, 3, 1, 3, 1};
 		int[] testData1 = {1, 2, 1, 2, 1, 2};
-		int[] testData2 = {1, 3, 1, 4, 1, 5};
+		int[] testData2 = {10, 3, 10, 4, 10, 5};
     	firstGI.addData(testData1);
     	secondGI.addData(testData2);
 		

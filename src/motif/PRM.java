@@ -8,6 +8,13 @@ import java.util.LinkedList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jsat.DataSet;
+import jsat.SimpleDataSet;
+import jsat.classifiers.DataPoint;
+import jsat.clustering.DBSCAN;
+import jsat.linear.DenseVector;
+import jsat.linear.Vec;
+
 /**
  * @author Steve Kordell
  *
@@ -15,33 +22,67 @@ import java.util.regex.Pattern;
 public class PRM extends AbstractNode {
 
 	private String data;
+	private LinkedList<DataPoint> frames;
 	private ArrayList<String> patterns; //TODO: contains is used a lot on this object and is probably the limiting factor for performance. Consider using a different data type.
 	private LinkedList<Prediction> currentPredictions;
+	private LinkedList<Prediction> predictionsFromAbove;
+	private boolean allDendritesWereReady;
+	
+	private DBSCAN dbscan;
 	
 	private static final String elementRegex = "(\\d+)\\s*"; ; 
 	private static final Pattern elementPattern = Pattern.compile(elementRegex);
 	
-	private int input;
-	private LinkedList<Prediction> predictionsFromAbove;
-
 	public PRM() {
 		super();
 		this.data = "";
 		this.patterns = new ArrayList<String>(3000);
 		this.currentPredictions = new LinkedList<Prediction>();
+		this.dbscan = new DBSCAN();
+		this.frames = new LinkedList<DataPoint>();
+		this.allDendritesWereReady = false;
 	}
 	
-	public void stepOne() {
-		input = this.getDendrites().getFirst().getAxon(); //todo: for now only using the first input, heavy modifications will be needed to work with multiple inputs
-		if (input != -1) {
-			this.data+=input+" ";
-	        System.out.println("------"+this.data+"------");        
-	        this.updateOutput();
+	public void stepOne() {	
+		if (this.allDendritesWereReady = allDendritesReady()) {
+			this.classify(); //todo, probably want a way to turn this off eventually, for cells with only one input in which clustering isn't needed
+			System.out.println("------"+this.data+"------");
+			this.updateOutput();
 		}
 	}
 	
+	private boolean allDendritesReady() {
+		for (AbstractNode d: this.getDendrites()) {
+			if (d.checkAxon() == -1) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private void classify() {		
+		final int MINPOINTS = 2;
+ 
+		//prepare the incoming data
+		LinkedList<Double> dendriteValues = new LinkedList<Double>();			
+		for (AbstractNode d : this.getDendrites()) {
+			dendriteValues.add((double) d.getAxon());
+		}		
+		Vec frame = new DenseVector(dendriteValues);
+		frames.add(new DataPoint(frame,null,null));
+		DataSet dataset = new SimpleDataSet(frames);
+		
+		if (frames.size() > 2) {
+			int[] designations = dbscan.cluster(dataset,MINPOINTS,(int[])null);			
+			this.data = new String(); //TODO: use string buffer for better performance?
+			for (int designation : designations) {				
+				this.data = this.data.concat(String.valueOf(designation+" "));
+			}	
+		}
+	}
+
 	public void stepTwo() {
-		if (input != -1) {
+		if (this.allDendritesWereReady) {
 			this.findPatterns();
 			this.makePrediction();	
 		}
