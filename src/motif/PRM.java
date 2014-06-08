@@ -74,10 +74,11 @@ public class PRM extends AbstractNode {
 		
 		if (frames.size() > 2) {
 			int[] designations = dbscan.cluster(dataset,MINPOINTS,(int[])null);			
-			this.data = new String(); //TODO: use string buffer for better performance?
+			StringBuilder buffer = new StringBuilder();
 			for (int designation : designations) {				
-				this.data = this.data.concat(String.valueOf(designation+" "));
+				buffer.append(designation); buffer.append(' ');
 			}	
+			this.data = buffer.toString();
 		}
 	}
 
