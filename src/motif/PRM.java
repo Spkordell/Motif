@@ -49,19 +49,18 @@ public class PRM extends AbstractNode {
 	}
 	
 	public void stepOne() throws TooManyDendritesException {	
+
 		if (this.allDendritesWereReady = allDendritesReady()) {
 			this.classify();
 			if (!this.caughtRuntimeException) {
 				System.out.println("------"+this.data+"------");
-				/*Print raw incoming data
+				/*
+				//Print raw incoming data
 				for (DataPoint frame : this.frames) {
 					System.out.print(frame.getNumericalValues());
 				}
-				*/
 				System.out.println();
-				
-				
-				
+			    */
 				this.updateOutput();
 			}
 		}
@@ -161,7 +160,7 @@ public class PRM extends AbstractNode {
 					if (this.getDendrites().get(i) == caller) {
 						//we found which who wanted the data, we can send back the appropriate set
 						//assemble the prediction object to send back
-						predictionsToSend.add(new Prediction(extractedPrediction.get(i).toString(), prediction.getConfidence()));
+						predictionsToSend.add(new Prediction(extractedPrediction.get(i).toString().trim(), prediction.getConfidence()));
 						break;
 					}
 				}
@@ -481,8 +480,8 @@ public class PRM extends AbstractNode {
      		//System.out.println(predictionFromAbove + "::" + prediction);
      		if (prediction.startsWith(predictionFromAbove.getPrediction()) || predictionFromAbove.getPrediction().startsWith(prediction)) {
      			//A weighted average between the confidece of this prediction and the confidence of the predictions from above with those from above having more weight
+     			System.out.println("prediction "+prediction+" modified by perfect match from "+ predictionConfidence + " to "+ (PERFECT_MATCH_CURRENT_LEVEL_WEIGHT*predictionConfidence + PERFECT_MATCH_FROM_ABOVE_WEIGHT*predictionFromAbove.getConfidence())/(PERFECT_MATCH_CURRENT_LEVEL_WEIGHT+PERFECT_MATCH_FROM_ABOVE_WEIGHT));
      			predictionConfidence = (PERFECT_MATCH_CURRENT_LEVEL_WEIGHT*predictionConfidence + PERFECT_MATCH_FROM_ABOVE_WEIGHT*predictionFromAbove.getConfidence())/(PERFECT_MATCH_CURRENT_LEVEL_WEIGHT+PERFECT_MATCH_FROM_ABOVE_WEIGHT);
-     			//System.out.println(prediction+" modified by perfect");
      		} else if (prediction.contains(predictionFromAbove.getPrediction()) || predictionFromAbove.getPrediction().contains(prediction)) {
      			System.out.println("prediction "+prediction+" modified by shift from " + predictionConfidence + " to " + (SHIFT_MATCH_CURRENT_LEVEL_WEIGHT*predictionConfidence + SHIFT_MATCH_FROM_ABOVE_WEIGHT*predictionFromAbove.getConfidence())/(SHIFT_MATCH_CURRENT_LEVEL_WEIGHT+SHIFT_MATCH_FROM_ABOVE_WEIGHT));
      			predictionConfidence = (SHIFT_MATCH_CURRENT_LEVEL_WEIGHT*predictionConfidence + SHIFT_MATCH_FROM_ABOVE_WEIGHT*predictionFromAbove.getConfidence())/(SHIFT_MATCH_CURRENT_LEVEL_WEIGHT+SHIFT_MATCH_FROM_ABOVE_WEIGHT);
@@ -499,7 +498,9 @@ public class PRM extends AbstractNode {
 					}
 				}
 				float matchPercentage = (float)matchCount/(matchCount+misMatchCount);
-		     	//System.out.println(prediction+" modified by partial : " +matchPercentage*100+ "%");
+				if (predictionConfidence != (float) ((PERFECT_MATCH_CURRENT_LEVEL_WEIGHT*predictionConfidence + matchPercentage*PERFECT_MATCH_FROM_ABOVE_WEIGHT*predictionFromAbove.getConfidence())/(PERFECT_MATCH_CURRENT_LEVEL_WEIGHT+matchPercentage*PERFECT_MATCH_FROM_ABOVE_WEIGHT))) {
+					System.out.println("prediction "+prediction+" modified by partial from "+ predictionConfidence + " to "+ (float) ((PERFECT_MATCH_CURRENT_LEVEL_WEIGHT*predictionConfidence + matchPercentage*PERFECT_MATCH_FROM_ABOVE_WEIGHT*predictionFromAbove.getConfidence())/(PERFECT_MATCH_CURRENT_LEVEL_WEIGHT+matchPercentage*PERFECT_MATCH_FROM_ABOVE_WEIGHT)));
+				}
 	     		predictionConfidence = (float) ((PERFECT_MATCH_CURRENT_LEVEL_WEIGHT*predictionConfidence + matchPercentage*PERFECT_MATCH_FROM_ABOVE_WEIGHT*predictionFromAbove.getConfidence())/(PERFECT_MATCH_CURRENT_LEVEL_WEIGHT+matchPercentage*PERFECT_MATCH_FROM_ABOVE_WEIGHT));
      		}
      	}    	
