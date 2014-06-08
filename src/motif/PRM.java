@@ -19,8 +19,7 @@ import jsat.linear.Vec;
  * @author Steve Kordell
  *
  */
-public class PRM extends AbstractNode {
-
+public class PRM extends AbstractNode {	
 	private String data;
 	private LinkedList<DataPoint> frames;
 	private ArrayList<String> patterns; //TODO: contains is used a lot on this object and is probably the limiting factor for performance. Consider using a different data type.
@@ -112,14 +111,31 @@ public class PRM extends AbstractNode {
 	
 	public LinkedList<Prediction> getCurrentPredictions() {
 		return this.currentPredictions;
+		
+		
+		/*
+		
+		
+		
+		
+		BIG TODO
+		--------
+		From above stuff is wrong now that the classifier is in place. More effort is needed is sending the correct pattern stream back up the chain
+		
+		
+		
+		*/
+		
 	}
 	
 	private void getPredictionsFromAbove() {
 		this.predictionsFromAbove = new LinkedList<Prediction>();
 				
 		if (this.getReturns().size() > 0) {
-			LinkedList<Prediction> unParsedPredictionsFromAbove = this.getReturns().getFirst().getCurrentPredictions();
-
+			LinkedList<Prediction> unParsedPredictionsFromAbove = new LinkedList<Prediction>();
+			for (PRM aReturn : this.getReturns()) {
+					unParsedPredictionsFromAbove.addAll(aReturn.getCurrentPredictions());
+			}
 			//sub in the patterns for the predicions				
 			for (Prediction prediction : unParsedPredictionsFromAbove) {
 				Matcher matcher = elementPattern.matcher(prediction.getPrediction());
