@@ -28,7 +28,6 @@ public class PRM extends AbstractNode {
 		super();
 		this.data = "";
 		this.patterns = new ArrayList<String>(3000);
-		
 		this.currentPredictions = new LinkedList<Prediction>();
 	}
 	
