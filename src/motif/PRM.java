@@ -66,15 +66,15 @@ public class PRM extends AbstractNode {
 		}
 	}
 	
-	private boolean allDendritesReady() {
-		for (AbstractNode d: this.getDendrites()) {
-			if (d.checkAxon() == -1) {
-				return false;
-			}
+	public void stepTwo() {
+		if (this.allDendritesWereReady && !this.caughtRuntimeException) {
+			this.findPatterns();
+			this.makePredictions();	
 		}
-		return true;
 	}
-
+	
+	
+	
 	private void classify() throws TooManyDendritesException {
 		final int MINPOINTS = 2;
  
@@ -112,216 +112,7 @@ public class PRM extends AbstractNode {
 			}
 		}
 	}
-
-	public void stepTwo() {
-		if (this.allDendritesWereReady && !this.caughtRuntimeException) {
-			this.findPatterns();
-			this.makePrediction();	
-		}
-	}
 	
-	public List<Prediction> getCurrentPredictions(AbstractNode caller) {
-		if (this.classiferEnabled) {
-			List<Prediction> predictionsToSend = new ArrayList<Prediction>(5);
-			for (Prediction prediction : this.currentPredictions) {
-				//Convert the prediction into an array of integers
-				String[] predictionAsStringArray = prediction.getPrediction().split(" ");
-				int[] predictionAsNumArray = new int[predictionAsStringArray.length];
-				for (int i = 0; i < predictionAsStringArray.length; i++) {
-					predictionAsNumArray[i] = Integer.parseInt(predictionAsStringArray[i]);
-				}
-				
-				//make a string for each dendrite to store that dendrite's predictions
-				List<StringBuilder> extractedPrediction = new ArrayList<StringBuilder>();
-				for (int d = 0; d < this.getDendrites().size(); d++) {
-					extractedPrediction.add(new StringBuilder());
-				}
-				
-				//for every element of the original prediction, find the center point of the cluster. Break this vector into the predicitons for each individual dendrite.
-				for (int element : predictionAsNumArray) {		
-					//find the center by averaging the points of the corresponding cluster
-					Vec center = DenseVector.zeros(this.getDendrites().size());
-					for (int d = 0; d < this.getDendrites().size(); d++) {
-						for (int i = 0; i < cluster.get(element).size(); i++) {
-							center.set(d, center.get(d)+cluster.get(element).get(i).getNumericalValues().get(d));
-						}
-						center.set(d, center.get(d)/cluster.get(element).size());
-					}					
-
-					//break the vector apart into the individual predicitons
-					for (int d = 0; d < this.getDendrites().size(); d++) {
-						extractedPrediction.get(d).append((int)Math.round(center.get(d)));
-						extractedPrediction.get(d).append(' ');
-					}
-				}
-							
-				//find which dendrite made the call
-				for (int i = 0; i < this.getDendrites().size(); i++) {
-					if (this.getDendrites().get(i) == caller) {
-						//we found which who wanted the data, we can send back the appropriate set
-						//assemble the prediction object to send back
-						predictionsToSend.add(new Prediction(extractedPrediction.get(i).toString().trim(), prediction.getConfidence()));
-						break;
-					}
-				}
-			}
-			return predictionsToSend;	
-			
-			//TODO: can perhaps add error bars if we include the std. dev. of the cluster in the prediciton rather than just the average
-			
-		} else {
-			return this.currentPredictions;
-		}	
-	}
-	
-	private void getPredictionsFromAbove() {
-		this.predictionsFromAbove = new LinkedList<Prediction>();
-				
-		if (this.getReturns().size() > 0) {
-			LinkedList<Prediction> unParsedPredictionsFromAbove = new LinkedList<Prediction>();
-			for (PRM aReturn : this.getReturns()) {
-					unParsedPredictionsFromAbove.addAll(aReturn.getCurrentPredictions(this));
-			}
-			//sub in the patterns for the predicions				
-			for (Prediction prediction : unParsedPredictionsFromAbove) {
-				Matcher matcher = elementPattern.matcher(prediction.getPrediction());
-				StringBuffer sb = new StringBuffer();
-				while(matcher.find()) {
-				    matcher.appendReplacement(sb, this.patterns.get(Integer.parseInt(matcher.group(1)))+' ');
-				}
-				matcher.appendTail(sb);
-				System.out.println("Prediction: "+sb.toString()+" = "+prediction.getConfidence()*100+"% : From Above");
-				this.predictionsFromAbove.add(new Prediction(sb.toString().trim(),prediction.getConfidence()));
-				this.predictionsFromAbove.getLast().setFromAbove(true);
-			}
-		}
-		
-	}
-	
-    private LinkedList<Prediction> makePrediction() { 	
-
-    	if (currentPredictions.isEmpty() || anyPredictionMet() || allPredictionsFailed()) {
-    		//not monitoring any predictions, search for new ones to monitor
-    		
-    		//get any information the above PRM has which might be useful
-        	getPredictionsFromAbove();
-        	
-			//make a prediction as to what might come next	 
-			String regex;
-			Pattern p;
-			Matcher matcher;
-			LinkedList<Prediction> predictions = new LinkedList<Prediction>();
-			for(String pattern : this.patterns) {
-				regex = "\\s(";
-				int i = 0;
-				while ( (i = pattern.indexOf(' ',++i)) != -1) {
-					regex+=pattern.substring(0,i).trim()+"|";
-				}
-				if (regex.endsWith("|")) {
-					regex = regex.substring(0,regex.length()-1);
-				}
-				regex += ")\\s$";
-				p = Pattern.compile(regex);        	        		
-				matcher = p.matcher(this.data);
-				if (matcher.find()) {
-					//This pattern matches some part of the end of the input		
-					//chop off the portion of the pattern that intersects with the end of the input, leaving just the prediction
-					//TODO: allow patterns into the list if they are compatible with "predictions from above"
-					
-					
-					int idx = pattern.length();
-					while (!this.data.endsWith(pattern.substring(0, idx--)));
-
-					Prediction prediction = new Prediction(pattern.substring(idx + 1), pattern, this.patterns.indexOf(pattern));					
-					prediction.setConfidence(determinePredictionConfidence(this.data, pattern, prediction.getPrediction(), this.predictionsFromAbove));
-					
-					if (!hasRepeatedPrediction(predictions,prediction)) { //remove repeated predictions
-			   	   		predictions.add(prediction);
-			      	} else {
-			      		//compare strengths and keep the largest	      		
-			      		Prediction predictionInList = findPredictionWithValue(predictions,prediction);
-			      		if (predictionInList.getConfidence() <  prediction.getConfidence()) {
-			      			predictionInList.setConfidence(prediction.getConfidence());
-			      		}		      		
-			      	}
-				}
-			}
-			
-			float largestPredictionConfidence = -1;			
-			if (predictions.size() == 0) {
-				System.out.println("No predictions");
-				this.currentPredictions = new LinkedList<Prediction>();
-				return new LinkedList<Prediction>();
-			} else {
-				//int predictionIndex = 0;
-			   	for(Prediction prediction : predictions){
-			   		System.out.println("Prediction: "+prediction.getPrediction()+" = "+prediction.getConfidence()*100+"%"+" : " + prediction.getAssociatedPatternIndex());			 
-			   		if (prediction.getConfidence() > largestPredictionConfidence) {
-			   			largestPredictionConfidence = prediction.getConfidence();
-			   		}
-			   	}
-			}
-	
-			//Select predictions		
-			//TODO: currently sending multiple predictions only if the strengths tie perfectly. Might want to send predictions for close matches too.
-			LinkedList<Prediction> selectedPredictions = new LinkedList<Prediction>();		
-			for(Prediction prediction : predictions){
-				if (prediction.getConfidence() == largestPredictionConfidence) {
-					//Remove predictions which which have overlap (want just the longest version of each predicion)
-					for (Prediction aPrediction : selectedPredictions) {
-						if (prediction.getPrediction().startsWith(aPrediction.getPrediction()+" ")) {
-							selectedPredictions.remove(aPrediction);
-						}
-					}
-					selectedPredictions.add(prediction);	
-				}	
-		   	}
-			
-			for(Prediction prediction : selectedPredictions){
-				System.out.println("Selected Prediction: "+prediction.getPrediction()+" = "+largestPredictionConfidence*100 + "%");
-			}
-			
-			//save a new prediction to watch for
-			this.currentPredictions = selectedPredictions;
-		}			
-		return currentPredictions;
-	}
-    
-    private boolean anyPredictionMet() {
-    	for (Prediction prediction: this.currentPredictions) {
-    		if (prediction.isMet()) {
-    			return true;
-    		}
-    	}
-    	return false;
-	}
-    
-    private boolean allPredictionsFailed() {
-    	for (Prediction prediction: this.currentPredictions) {
-    		if (!prediction.isFailed()) {
-    			return false;
-    		}
-    	}
-    	return true;
-	}
-
-	private Prediction findPredictionWithValue(LinkedList<Prediction> predictions, Prediction prediction) {
-    	for (Prediction aPrediction: predictions) {
-    		if (aPrediction.getPrediction().equals(prediction.getPrediction())) {
-    			return aPrediction;
-    		}
-    	}
-    	return null;
-	}
-
-	private boolean hasRepeatedPrediction(LinkedList<Prediction> predictions, Prediction prediction) {
-    	for (Prediction aPrediction: predictions) {
-    		if (aPrediction.getPrediction().equals(prediction.getPrediction())) {
-    			return true;
-    		}
-    	}
-    	return false;
-    }
 	
 	private void updateOutput() {
 		
@@ -418,8 +209,7 @@ public class PRM extends AbstractNode {
 		   System.out.println("Node Output = "+this.getAxon());
 	   }
 	}
-	
-	
+
 	private void findPatterns() {
     	if (this.currentPredictions.isEmpty() || anyPredictionMet() || allPredictionsFailed()) {
     		//not monitoring any predictions, need to look for new patterns
@@ -447,12 +237,171 @@ public class PRM extends AbstractNode {
 		   }
     	}
 	}
-   
-	@SuppressWarnings("unused")
-	private static int countElements(String string) {
-		return string.split(" ").length;
+		
+   private LinkedList<Prediction> makePredictions() { 	
+    	if (currentPredictions.isEmpty() || anyPredictionMet() || allPredictionsFailed()) {
+    		//not monitoring any predictions, search for new ones to monitor
+    		
+    		//get any information the above PRM has which might be useful
+        	getPredictionsFromAbove();
+        	
+			//make a prediction as to what might come next	 
+			String regex;
+			Pattern p;
+			Matcher matcher;
+			LinkedList<Prediction> predictions = new LinkedList<Prediction>();
+			for(String pattern : this.patterns) {
+				regex = "\\s(";
+				int i = 0;
+				while ( (i = pattern.indexOf(' ',++i)) != -1) {
+					regex+=pattern.substring(0,i).trim()+"|";
+				}
+				if (regex.endsWith("|")) {
+					regex = regex.substring(0,regex.length()-1);
+				}
+				regex += ")\\s$";
+				p = Pattern.compile(regex);        	        		
+				matcher = p.matcher(this.data);
+				if (matcher.find()) {
+					//This pattern matches some part of the end of the input		
+					//chop off the portion of the pattern that intersects with the end of the input, leaving just the prediction
+					//TODO: allow patterns into the list if they are compatible with "predictions from above"
+					
+					
+					int idx = pattern.length();
+					while (!this.data.endsWith(pattern.substring(0, idx--)));
+
+					Prediction prediction = new Prediction(pattern.substring(idx + 1), pattern, this.patterns.indexOf(pattern));					
+					prediction.setConfidence(determinePredictionConfidence(this.data, pattern, prediction.getPrediction(), this.predictionsFromAbove));
+					
+					if (!hasRepeatedPrediction(predictions,prediction)) { //remove repeated predictions
+			   	   		predictions.add(prediction);
+			      	} else {
+			      		//compare strengths and keep the largest	      		
+			      		Prediction predictionInList = findPredictionWithValue(predictions,prediction);
+			      		if (predictionInList.getConfidence() <  prediction.getConfidence()) {
+			      			predictionInList.setConfidence(prediction.getConfidence());
+			      		}		      		
+			      	}
+				}
+			}
+			
+			float largestPredictionConfidence = -1;			
+			if (predictions.size() == 0) {
+				System.out.println("No predictions");
+				this.currentPredictions = new LinkedList<Prediction>();
+				return new LinkedList<Prediction>();
+			} else {
+				//int predictionIndex = 0;
+			   	for(Prediction prediction : predictions){
+			   		System.out.println("Prediction: "+prediction.getPrediction()+" = "+prediction.getConfidence()*100+"%"+" : " + prediction.getAssociatedPatternIndex());			 
+			   		if (prediction.getConfidence() > largestPredictionConfidence) {
+			   			largestPredictionConfidence = prediction.getConfidence();
+			   		}
+			   	}
+			}
+	
+			//Select predictions		
+			//TODO: currently sending multiple predictions only if the strengths tie perfectly. Might want to send predictions for close matches too.
+			LinkedList<Prediction> selectedPredictions = new LinkedList<Prediction>();		
+			for(Prediction prediction : predictions){
+				if (prediction.getConfidence() == largestPredictionConfidence) {
+					//Remove predictions which which have overlap (want just the longest version of each predicion)
+					for (Prediction aPrediction : selectedPredictions) {
+						if (prediction.getPrediction().startsWith(aPrediction.getPrediction()+" ")) {
+							selectedPredictions.remove(aPrediction);
+						}
+					}
+					selectedPredictions.add(prediction);	
+				}	
+		   	}
+			
+			for(Prediction prediction : selectedPredictions){
+				System.out.println("Selected Prediction: "+prediction.getPrediction()+" = "+largestPredictionConfidence*100 + "%");
+			}
+			
+			//save a new prediction to watch for
+			this.currentPredictions = selectedPredictions;
+		}			
+		return currentPredictions;
 	}
 	
+	public List<Prediction> getCurrentPredictions(AbstractNode caller) {
+		if (this.classiferEnabled) {
+			List<Prediction> predictionsToSend = new ArrayList<Prediction>(5);
+			for (Prediction prediction : this.currentPredictions) {
+				//Convert the prediction into an array of integers
+				String[] predictionAsStringArray = prediction.getPrediction().split(" ");
+				int[] predictionAsNumArray = new int[predictionAsStringArray.length];
+				for (int i = 0; i < predictionAsStringArray.length; i++) {
+					predictionAsNumArray[i] = Integer.parseInt(predictionAsStringArray[i]);
+				}
+				
+				//make a string for each dendrite to store that dendrite's predictions
+				List<StringBuilder> extractedPrediction = new ArrayList<StringBuilder>();
+				for (int d = 0; d < this.getDendrites().size(); d++) {
+					extractedPrediction.add(new StringBuilder());
+				}
+				
+				//for every element of the original prediction, find the center point of the cluster. Break this vector into the predicitons for each individual dendrite.
+				for (int element : predictionAsNumArray) {		
+					//find the center by averaging the points of the corresponding cluster
+					Vec center = DenseVector.zeros(this.getDendrites().size());
+					for (int d = 0; d < this.getDendrites().size(); d++) {
+						for (int i = 0; i < cluster.get(element).size(); i++) {
+							center.set(d, center.get(d)+cluster.get(element).get(i).getNumericalValues().get(d));
+						}
+						center.set(d, center.get(d)/cluster.get(element).size());
+					}					
+
+					//break the vector apart into the individual predicitons
+					for (int d = 0; d < this.getDendrites().size(); d++) {
+						extractedPrediction.get(d).append((int)Math.round(center.get(d)));
+						extractedPrediction.get(d).append(' ');
+					}
+				}
+							
+				//find which dendrite made the call
+				for (int i = 0; i < this.getDendrites().size(); i++) {
+					if (this.getDendrites().get(i) == caller) {
+						//we found which who wanted the data, we can send back the appropriate set
+						//assemble the prediction object to send back
+						predictionsToSend.add(new Prediction(extractedPrediction.get(i).toString().trim(), prediction.getConfidence()));
+						break;
+					}
+				}
+			}
+			return predictionsToSend;			
+			//TODO: can perhaps add error bars if we include the std. dev. of the cluster in the prediciton rather than just the average			
+		} else {
+			return this.currentPredictions;
+		}	
+	}
+	
+	private void getPredictionsFromAbove() {
+		this.predictionsFromAbove = new LinkedList<Prediction>();
+				
+		if (this.getReturns().size() > 0) {
+			LinkedList<Prediction> unParsedPredictionsFromAbove = new LinkedList<Prediction>();
+			for (PRM aReturn : this.getReturns()) {
+					unParsedPredictionsFromAbove.addAll(aReturn.getCurrentPredictions(this));
+			}
+			//sub in the patterns for the predicions				
+			for (Prediction prediction : unParsedPredictionsFromAbove) {
+				Matcher matcher = elementPattern.matcher(prediction.getPrediction());
+				StringBuffer sb = new StringBuffer();
+				while(matcher.find()) {
+				    matcher.appendReplacement(sb, this.patterns.get(Integer.parseInt(matcher.group(1)))+' ');
+				}
+				matcher.appendTail(sb);
+				System.out.println("Prediction: "+sb.toString()+" = "+prediction.getConfidence()*100+"% : From Above");
+				this.predictionsFromAbove.add(new Prediction(sb.toString().trim(),prediction.getConfidence()));
+				this.predictionsFromAbove.getLast().setFromAbove(true);
+			}
+		}
+		
+	}
+	     
 	private static float determinePredictionConfidence(String elem, String pattern, String prediction, LinkedList<Prediction> predictionsFromAbove) {
 		
 		final int PERFECT_MATCH_CURRENT_LEVEL_WEIGHT = 1;
@@ -469,15 +418,12 @@ public class PRM extends AbstractNode {
      	//subtract 1 from missed count if input string ends in the partial pattern (We can't miss a pattern we haven't fully seen yet)    	
      	if (elem.endsWith(pattern.substring(0,pattern.length()-prediction.length()-1)+" ")) {
      		patternMissedCount-=1;
-     	}
-     	
-     	float predictionConfidence = 1-((float)patternMissedCount/(patternCount+patternMissedCount));
-    	//System.out.println(pattern+": "+patternCount+", "+pattern.substring(0,pattern.length()-prediction.length()-1)+": "+patternMissedCount+" = "+predictionStrength*100+"%");
-    		
-     	//Take into account any information provided by above predictions by adjusting the confidence accordingly
-     	//System.out.println(prediction+" conf: " + predictionConfidence);    
+     	}    	
+    	float predictionConfidence = 1-((float)patternMissedCount/(patternCount+patternMissedCount));
+
+    	
+     	//Take into account any information provided by above predictions by adjusting the confidence accordingly  
      	for (Prediction predictionFromAbove : predictionsFromAbove) {
-     		//System.out.println(predictionFromAbove + "::" + prediction);
      		if (prediction.startsWith(predictionFromAbove.getPrediction()) || predictionFromAbove.getPrediction().startsWith(prediction)) {
      			//A weighted average between the confidece of this prediction and the confidence of the predictions from above with those from above having more weight
      			System.out.println("prediction "+prediction+" modified by perfect match from "+ predictionConfidence + " to "+ (PERFECT_MATCH_CURRENT_LEVEL_WEIGHT*predictionConfidence + PERFECT_MATCH_FROM_ABOVE_WEIGHT*predictionFromAbove.getConfidence())/(PERFECT_MATCH_CURRENT_LEVEL_WEIGHT+PERFECT_MATCH_FROM_ABOVE_WEIGHT));
@@ -507,6 +453,52 @@ public class PRM extends AbstractNode {
     	return predictionConfidence;
 	}
 
+	
+	private Prediction findPredictionWithValue(LinkedList<Prediction> predictions, Prediction prediction) {
+    	for (Prediction aPrediction: predictions) {
+    		if (aPrediction.getPrediction().equals(prediction.getPrediction())) {
+    			return aPrediction;
+    		}
+    	}
+    	return null;
+	}
+
+	private boolean hasRepeatedPrediction(LinkedList<Prediction> predictions, Prediction prediction) {
+    	for (Prediction aPrediction: predictions) {
+    		if (aPrediction.getPrediction().equals(prediction.getPrediction())) {
+    			return true;
+    		}
+    	}
+    	return false;
+    }
+	
+	private boolean allDendritesReady() {
+		for (AbstractNode d: this.getDendrites()) {
+			if (d.checkAxon() == -1) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+    private boolean anyPredictionMet() {
+    	for (Prediction prediction: this.currentPredictions) {
+    		if (prediction.isMet()) {
+    			return true;
+    		}
+    	}
+    	return false;
+	}
+    
+    private boolean allPredictionsFailed() {
+    	for (Prediction prediction: this.currentPredictions) {
+    		if (!prediction.isFailed()) {
+    			return false;
+    		}
+    	}
+    	return true;
+	}
+    
 	public boolean isClassiferEnabled() {
 		return classiferEnabled;
 	}
@@ -514,5 +506,5 @@ public class PRM extends AbstractNode {
 	public void setClassiferEnabled(boolean classiferDisabled) {
 		this.classiferEnabled = classiferDisabled;
 	}
-	
+
 }
