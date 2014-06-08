@@ -31,15 +31,15 @@ public class AbstractNode {
 		this.returns.add(node);
 	}
 	
-	public LinkedList<AbstractNode> getDendrites() {
+	protected LinkedList<AbstractNode> getDendrites() {
 		return this.dendrites;
 	}
 	
-	public LinkedList<PRM> getReturns() {
+	protected LinkedList<PRM> getReturns() {
 		return this.returns;
 	}
 
-	public int checkAxon() {
+	protected int checkAxon() {
 		return this.axon;
 	}
 }

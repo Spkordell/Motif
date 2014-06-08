@@ -5,6 +5,7 @@ package motif;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,6 +31,7 @@ public class PRM extends AbstractNode {
 	private DBSCAN dbscan;
 	private boolean classiferEnabled;
 	private boolean caughtRuntimeException;
+	private List<List<DataPoint>> cluster;
 	
 	private static final String elementRegex = "(\\d+)\\s*"; ; 
 	private static final Pattern elementPattern = Pattern.compile(elementRegex);
@@ -48,9 +50,18 @@ public class PRM extends AbstractNode {
 	
 	public void stepOne() throws TooManyDendritesException {	
 		if (this.allDendritesWereReady = allDendritesReady()) {
-			this.classify(); //todo, probably want a way to turn this off eventually, for cells with only one input in which clustering isn't needed
+			this.classify();
 			if (!this.caughtRuntimeException) {
 				System.out.println("------"+this.data+"------");
+				/*Print raw incoming data
+				for (DataPoint frame : this.frames) {
+					System.out.print(frame.getNumericalValues());
+				}
+				*/
+				System.out.println();
+				
+				
+				
 				this.updateOutput();
 			}
 		}
@@ -75,12 +86,13 @@ public class PRM extends AbstractNode {
 				dendriteValues.add((double) d.getAxon());
 			}		
 			Vec frame = new DenseVector(dendriteValues);
-			frames.add(new DataPoint(frame,null,null));
-			DataSet dataset = new SimpleDataSet(frames);
+			this.frames.add(new DataPoint(frame,null,null));
+			DataSet dataset = new SimpleDataSet(this.frames);
 			
-			if (frames.size() > 2) {
+			if (this.frames.size() > 2) {
 				try {
-					int[] designations = dbscan.cluster(dataset,MINPOINTS,(int[])null);			
+					int[] designations = dbscan.cluster(dataset,MINPOINTS,(int[])null);
+					this.cluster = DBSCAN.createClusterListFromAssignmentArray(designations, dataset);
 					StringBuilder buffer = new StringBuilder();
 					for (int designation : designations) {				
 						buffer.append(designation); buffer.append(' ');
@@ -95,7 +107,7 @@ public class PRM extends AbstractNode {
 			}
 		} else {
 			if (this.getDendrites().size() > 1) {
-				throw new TooManyDendritesException(); //TODO: fix exception name
+				throw new TooManyDendritesException();
 			} else {
 				this.data+=this.getDendrites().getFirst().getAxon()+" ";
 			}
@@ -109,23 +121,58 @@ public class PRM extends AbstractNode {
 		}
 	}
 	
-	public LinkedList<Prediction> getCurrentPredictions() {
-		return this.currentPredictions;
-		
-		
-		/*
-		
-		
-		
-		
-		BIG TODO
-		--------
-		From above stuff is wrong now that the classifier is in place. More effort is needed is sending the correct pattern stream back up the chain
-		
-		
-		
-		*/
-		
+	public List<Prediction> getCurrentPredictions(AbstractNode caller) {
+		if (this.classiferEnabled) {
+			List<Prediction> predictionsToSend = new ArrayList<Prediction>(5);
+			for (Prediction prediction : this.currentPredictions) {
+				//Convert the prediction into an array of integers
+				String[] predictionAsStringArray = prediction.getPrediction().split(" ");
+				int[] predictionAsNumArray = new int[predictionAsStringArray.length];
+				for (int i = 0; i < predictionAsStringArray.length; i++) {
+					predictionAsNumArray[i] = Integer.parseInt(predictionAsStringArray[i]);
+				}
+				
+				//make a string for each dendrite to store that dendrite's predictions
+				List<StringBuilder> extractedPrediction = new ArrayList<StringBuilder>();
+				for (int d = 0; d < this.getDendrites().size(); d++) {
+					extractedPrediction.add(new StringBuilder());
+				}
+				
+				//for every element of the original prediction, find the center point of the cluster. Break this vector into the predicitons for each individual dendrite.
+				for (int element : predictionAsNumArray) {		
+					//find the center by averaging the points of the corresponding cluster
+					Vec center = DenseVector.zeros(this.getDendrites().size());
+					for (int d = 0; d < this.getDendrites().size(); d++) {
+						for (int i = 0; i < cluster.get(element).size(); i++) {
+							center.set(d, center.get(d)+cluster.get(element).get(i).getNumericalValues().get(d));
+						}
+						center.set(d, center.get(d)/cluster.get(element).size());
+					}					
+
+					//break the vector apart into the individual predicitons
+					for (int d = 0; d < this.getDendrites().size(); d++) {
+						extractedPrediction.get(d).append((int)Math.round(center.get(d)));
+						extractedPrediction.get(d).append(' ');
+					}
+				}
+							
+				//find which dendrite made the call
+				for (int i = 0; i < this.getDendrites().size(); i++) {
+					if (this.getDendrites().get(i) == caller) {
+						//we found which who wanted the data, we can send back the appropriate set
+						//assemble the prediction object to send back
+						predictionsToSend.add(new Prediction(extractedPrediction.get(i).toString(), prediction.getConfidence()));
+						break;
+					}
+				}
+			}
+			return predictionsToSend;	
+			
+			//TODO: can perhaps add error bars if we include the std. dev. of the cluster in the prediciton rather than just the average
+			
+		} else {
+			return this.currentPredictions;
+		}	
 	}
 	
 	private void getPredictionsFromAbove() {
@@ -134,7 +181,7 @@ public class PRM extends AbstractNode {
 		if (this.getReturns().size() > 0) {
 			LinkedList<Prediction> unParsedPredictionsFromAbove = new LinkedList<Prediction>();
 			for (PRM aReturn : this.getReturns()) {
-					unParsedPredictionsFromAbove.addAll(aReturn.getCurrentPredictions());
+					unParsedPredictionsFromAbove.addAll(aReturn.getCurrentPredictions(this));
 			}
 			//sub in the patterns for the predicions				
 			for (Prediction prediction : unParsedPredictionsFromAbove) {
