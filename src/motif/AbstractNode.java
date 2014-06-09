@@ -42,4 +42,10 @@ public class AbstractNode {
 	protected int checkAxon() {
 		return this.axon;
 	}
+
+	public void stepOne() throws TooManyDendritesException {
+	}
+
+	public void stepTwo() {
+	}
 }

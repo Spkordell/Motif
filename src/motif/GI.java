@@ -25,20 +25,28 @@ public class GI extends AbstractNode {
 		}
 	}
 	
-	public int getAxon() {
-		return this.data.poll();
+	public void stepOne() {
+		this.setAxon(this.data.poll());
 	}
 	
+	/*
+	public int getAxon() {
+		return this.data.poll();
+	}*/
+	
 	protected int checkAxon() {
-		if (this.data.peek() != null) {
+		/*if (this.data.peek() != null) {
 			return this.data.peek();
 		} else {
 			return -1;
-		}
+		}*/
+		return this.getAxon();
 	}
 
 	public boolean isEmpty() {
 		return this.data.isEmpty();
 	}
+	
+
 	
 }

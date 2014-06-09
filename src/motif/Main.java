@@ -31,7 +31,7 @@ public class Main {
     	
     	Network network = new Network();
     	try {
-    		network.start();
+    		network.run();
     	} catch (TooManyDendritesException e) {
     		e.printStackTrace();
     	}
