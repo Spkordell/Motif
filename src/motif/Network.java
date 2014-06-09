@@ -1,9 +1,9 @@
 package motif;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Queue;
 
 public class Network {
@@ -76,22 +76,19 @@ public class Network {
 	
 	
 	public void run() throws TooManyDendritesException {
-		List<AbstractNode> executionOrder = buildNodeExecutionOrder();
+		ListIterator<AbstractNode> executionIterator = buildNodeExecutionOrder().listIterator();
 		
-    	//send all the buffered data
 		int index;
     	while (!gis.get(0).isEmpty()) {
     		index = 1;
-    		for (AbstractNode node : executionOrder) {
+    		while (executionIterator.hasNext()) {
     			System.out.println("=====node " + (index++) + "====");
-    			node.stepOne();
-    		}
-    		Collections.reverse(executionOrder); //TODO: find a better way that doesn't involve reversing the list (use an iterator, or save the reversed list in advance)
-    		for (AbstractNode node : executionOrder) {
+    			executionIterator.next().stepOne();
+    		}    		
+    		while (executionIterator.hasPrevious()) {
     			System.out.println("====node " + (--index) + "====");
-    			node.stepTwo();
+    			executionIterator.previous().stepTwo();
     		}
-    		Collections.reverse(executionOrder);
     	}
 	}
 
