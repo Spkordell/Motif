@@ -2,11 +2,9 @@ package motif;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-import java.util.Set;
 
 public class Network {
 	private List<PRM> prms;
@@ -45,17 +43,7 @@ public class Network {
     	prms.get(3).connectDendriteTo(prms.get(0));
     	prms.get(3).connectDendriteTo(prms.get(1));
     	prms.get(3).connectDendriteTo(prms.get(2));
-    	
-    	//connect the feedback loops going the other way (TODO: Can probably do this automatially on dendrite creation if I pass "this" around)
-    	prms.get(0).connectReturnTo(prms.get(3));
-    	prms.get(1).connectReturnTo(prms.get(3));
-    	prms.get(2).connectReturnTo(prms.get(3));
-    	
-    	gis.get(0).connectReturnTo(prms.get(0));
-    	gis.get(1).connectReturnTo(prms.get(1));
-    	gis.get(2).connectReturnTo(prms.get(2));
-    	
-    	  	
+      	  	
     	//disable classifiers for cells with one integer input
     	prms.get(0).setClassiferEnabled(false);
     	prms.get(1).setClassiferEnabled(false);

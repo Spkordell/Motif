@@ -383,7 +383,7 @@ public class PRM extends AbstractNode {
 				
 		if (this.getReturns().size() > 0) {
 			LinkedList<Prediction> unParsedPredictionsFromAbove = new LinkedList<Prediction>();
-			for (PRM aReturn : this.getReturns()) {
+			for (AbstractNode aReturn : this.getReturns()) {
 					unParsedPredictionsFromAbove.addAll(aReturn.getCurrentPredictions(this));
 			}
 			//sub in the patterns for the predicions				

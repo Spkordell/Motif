@@ -7,11 +7,11 @@ public class AbstractNode {
 
 	private int axon; //todo: at the moment, only being used by PRM, move if not needed by others
 	private LinkedList<AbstractNode> dendrites; //used to send outputs
-	private LinkedList<PRM> returns; //used to revieve incoming predictions
+	private LinkedList<AbstractNode> returns; //used to revieve incoming predictions
 	
 	public AbstractNode() {
 		this.dendrites = new LinkedList<AbstractNode>();
-		this.returns = new LinkedList<PRM>();
+		this.returns = new LinkedList<AbstractNode>();
 		this.axon = -1;
 	}
 
@@ -25,17 +25,18 @@ public class AbstractNode {
 	
 	public void connectDendriteTo(AbstractNode node) {
 		this.dendrites.add(node);
+		node.connectReturnTo(this);
 	}
 	
-	public void connectReturnTo(PRM node) {
-		this.returns.add(node);
+	public void connectReturnTo(AbstractNode abstractNode) {
+		this.returns.add(abstractNode);
 	}
 	
 	protected LinkedList<AbstractNode> getDendrites() {
 		return this.dendrites;
 	}
 	
-	protected LinkedList<PRM> getReturns() {
+	protected LinkedList<AbstractNode> getReturns() {
 		return this.returns;
 	}
 
@@ -47,5 +48,9 @@ public class AbstractNode {
 	}
 
 	public void stepTwo() {
+	}
+
+	public LinkedList<Prediction> getCurrentPredictions(PRM prm) {
+		return new LinkedList<Prediction>();
 	}
 }
