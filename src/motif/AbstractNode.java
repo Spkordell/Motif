@@ -3,6 +3,7 @@ package motif;
 import java.awt.Color;
 import java.awt.Paint;
 import java.util.LinkedList;
+import java.util.List;
 
 
 public class AbstractNode {
@@ -52,7 +53,7 @@ public class AbstractNode {
 	public void stepTwo() {
 	}
 
-	public LinkedList<Prediction> getCurrentPredictions(PRM prm) {
+	public List<Prediction> getCurrentPredictions(AbstractNode node) {
 		return new LinkedList<Prediction>();
 	}
 

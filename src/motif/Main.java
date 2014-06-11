@@ -29,6 +29,22 @@ public class Main {
     	mainPanel.add(Visualizer.getInstance().drawGraph());
     }
     
+    private static Network createNetwork() { 
+    	int[] testData1 = {1, 2, 1, 2, 1, 3, 1, 3, 1, 2, 1, 2, 1, 3, 1, 3, 1, 2, 1, 2, 1, 3, 1, 3, 1, 2, 1, 2, 1, 3, 1, 3, 1, 2, 1, 2, 1, 3, 1, 3, 1, 2, 1, 2, 1, 3, 1};
+    	int[] testData2 = {6, 0, 4, 0, 7, 8, 2, 3, 1, 0, 6, 0, 8, 7, 3, 9, 8, 0, 6, 0, 1, 4, 8, 9, 9, 0, 1, 0, 6, 7, 4, 3, 2, 0, 6, 0, 9, 9, 4, 3, 6, 0, 3, 0, 5, 6, 3}; 
+    	int[] testData3 = {5, 3, 5, 7, 6, 0, 4, 0, 7, 8, 2, 3, 1, 0, 6, 0, 8, 7, 3, 9, 2, 0, 6, 0, 1, 4, 8, 9, 2, 0, 1, 0, 6, 7, 4, 3, 2, 0, 6, 0, 9, 9, 4, 3, 6, 0, 3};
+	
+    	Network network = new Network();
+    	
+       	network.addInput(new GI()).addData(testData1);
+       	network.addInput(new GI()).addData(testData2);
+       	network.addInput(new GI()).addData(testData3); 	
+		
+       	network.expand();
+       	
+		return network;
+    }
+    
 	public static void main(String[] args) {
         //Schedule a job for the event-dispatching thread:
         //creating and showing this application's GUI.
@@ -38,26 +54,11 @@ public class Main {
             }
         });
         
-    	Network network = new Network();
-    	
+        //Create and start the network
     	try {
-    		network.run();
+    		createNetwork().run();
     	} catch (TooManyDendritesException e) {
     		e.printStackTrace();
     	}
     }
-
-	/*
-	public static JPanel getMainPanel() {
-		return mainPanel;
-	}
-	
-	public static void add(Component component) {
-		cList.add(component);
-		getMainPanel().setLayout(new GridLayout(cList.size(), 1));
-		for(Component comp : cList) {
-			getMainPanel().add(comp);
-		}
-	}
-	*/
 }

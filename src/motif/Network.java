@@ -12,44 +12,19 @@ public class Network {
 	public Network() {
 		gis = new ArrayList<GI>();
 		prms = new ArrayList<PRM>();
-		
-		//Make an input node with some test data
-
-		gis.add(new GI());
-		gis.add(new GI());
-		gis.add(new GI());
-		
-    	//int[] testData = {1, 2, 1, 2, 1, 3, 1, 3, 1, 2, 1, 2, 1, 3, 1, 3, 1};
-		int[] testData1 = {1, 2, 1, 3, 1, 3, 1, 2, 1, 2, 1, 3, 1, 3, 1, 2, 1, 2, 1, 3, 1, 3, 1, 2, 1, 2, 1, 3, 1, 3, 1, 1, 2, 1, 3, 1, 3, 1, 2, 1, 2, 1, 3, 1, 3};
-		int[] testData2 = {1, 3, 1, 3, 1, 2, 1, 2, 1, 3, 1, 3, 1, 2, 1, 2, 1, 1, 3, 1, 3, 1, 2, 1, 2, 1, 3, 1, 3, 1, 2, 1, 2, 1, 3, 1, 3, 1, 2, 1, 2, 1, 3, 1, 3};
-		int[] testData3 = {1, 2, 3, 4, 3, 2, 1, 2, 3, 4, 3, 2, 1, 1, 2, 3, 4, 4, 3, 2, 1, 1, 2, 3, 4, 4, 3, 2, 1, 1, 2, 3, 4, 3, 2, 1, 2, 3, 4, 3, 2, 1, 1, 2, 3};
-		
-    	gis.get(0).addData(testData1);
-    	gis.get(1).addData(testData2);
-    	gis.get(2).addData(testData3);
-    	
-		//make some PRMs
-		prms.add(new PRM());
-		prms.add(new PRM());
-		prms.add(new PRM());
-		prms.add(new PRM());
-
-		//connect the PRMs to the GIs
-    	prms.get(0).connectDendriteTo(gis.get(0));
-    	prms.get(1).connectDendriteTo(gis.get(1));
-    	prms.get(2).connectDendriteTo(gis.get(2));
-    	
-    	//connect the PRMs to eachother
-    	prms.get(3).connectDendriteTo(prms.get(0));
-    	prms.get(3).connectDendriteTo(prms.get(1));
-    	prms.get(3).connectDendriteTo(prms.get(2));
-      	  	
-    	//disable classifiers for cells with one integer input
-    	prms.get(0).setClassiferEnabled(false);
-    	prms.get(1).setClassiferEnabled(false);
-    	prms.get(2).setClassiferEnabled(false);
 	}
 	
+	/*
+	 * Adds a global input to the network. Also creates and attaches a PRM to the gi.
+	 */
+	public GI addInput(GI gi) {
+		this.gis.add(gi);
+		PRM prm = new PRM();
+		this.prms.add(prm);
+		prm.connectDendriteTo(gi);
+		prm.setClassiferEnabled(false);
+		return gi;
+	}
 
 	private List<AbstractNode> buildNodeExecutionOrder() {
 		Queue<AbstractNode> fringe = new LinkedList<AbstractNode>();
@@ -74,7 +49,33 @@ public class Network {
 		return expandedNodes;
 	}
 	
+	public void expand() {
+		prms.addAll(makePRMs(4));
+		prms.get(3).connectDendriteTo(prms.get(0));
+		prms.get(3).connectDendriteTo(prms.get(1));
+		
+		prms.get(4).connectDendriteTo(prms.get(1));
+		prms.get(4).connectDendriteTo(prms.get(2));	
+		
+		prms.get(5).connectDendriteTo(prms.get(0));
+		prms.get(5).connectDendriteTo(prms.get(2));
+		
+		prms.get(6).connectDendriteTo(prms.get(3));
+		prms.get(6).connectDendriteTo(prms.get(4));
+		prms.get(6).connectDendriteTo(prms.get(5));
+		
+
+	}
 	
+	
+	private List<PRM> makePRMs(int numberToAdd) {
+		List<PRM> newPRMS = new LinkedList<PRM>();
+		for (int i = 0; i < numberToAdd; i++) {
+			newPRMS.add(new PRM());
+		}
+		return newPRMS;
+	}
+
 	public void run() throws TooManyDendritesException {
 		List<AbstractNode> executionList = buildNodeExecutionOrder();
     	Visualizer.getInstance().updateGraph(executionList);
@@ -84,13 +85,18 @@ public class Network {
     	while (!gis.get(0).isEmpty()) {
     		index = 1;
     		while (executionIterator.hasNext()) {
-    			System.out.println("=====node " + (index++) + "====");
+    			System.out.println("====node " + (index++) + "====");
     			executionIterator.next().stepOne();
     		}    		
     		while (executionIterator.hasPrevious()) {
     			System.out.println("====node " + (--index) + "====");
     			executionIterator.previous().stepTwo();
     		}
+    	}
+    	//Print the predicion for each GI
+    	int i = 0;
+    	for (GI gi : this.gis) {
+    		System.out.println("GI "+(i++)+": "+gi.getReturns().getFirst().getCurrentPredictions(gi));
     	}
 	}
 

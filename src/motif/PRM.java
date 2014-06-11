@@ -158,7 +158,7 @@ public class PRM extends AbstractNode {
 	 	   if (this.getAxon() == -1 && !allPredictionsFailed()) {
 	 	 	   System.out.println("Waiting for Predictions to be met");	 	 	
 	 	 	   for (Prediction prediction: this.currentPredictions) {
-	 	 		   System.out.println("Current Prediction: "+prediction.getPrediction() +":  failed? = "+prediction.isFailed());
+	 	 		   System.out.println("Current Prediction: "+prediction.getPrediction() +":  failed = "+prediction.isFailed());
 	 	 	   }
 	 	 	   //TODO: any time I get another data point, it's posisble a longer prediction could be found that has a higher strength. Might need to find a way to check for that rather thatn jsut waiting for this one to be met	   
 	 	   }
