@@ -3,6 +3,8 @@
  */
 package motif;
 
+import java.awt.Color;
+import java.awt.Paint;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -47,6 +49,8 @@ public class GI extends AbstractNode {
 		return this.data.isEmpty();
 	}
 	
-
+	public Paint getVisualizationColor() {
+		return Color.green;
+	}
 	
 }

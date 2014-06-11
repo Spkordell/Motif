@@ -3,6 +3,8 @@
  */
 package motif;
 
+import java.awt.Color;
+import java.awt.Paint;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -506,5 +508,8 @@ public class PRM extends AbstractNode {
 	public void setClassiferEnabled(boolean classiferDisabled) {
 		this.classiferEnabled = classiferDisabled;
 	}
-
+	
+	public Paint getVisualizationColor() {
+		return Color.blue;
+	}
 }

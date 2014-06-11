@@ -1,14 +1,12 @@
 package motif;
 
 import java.awt.*;
-import java.util.LinkedList;
 
 import javax.swing.*;
 
 public class Main {
-	//private static JFrame frame;
+	private static JFrame frame;
 	private static JPanel mainPanel;
-	private static LinkedList<Component> cList;
 	
     /**
      * Create the GUI and show it.  For thread safety,
@@ -16,25 +14,19 @@ public class Main {
      * event-dispatching thread.
      */
     private static void createAndShowGUI() {
-    	//cList = new LinkedList<Component>();
-    	//mainPanel = new JPanel(new GridLayout(1, 1));    	
-        //Create and set up the window.
-        //frame = new JFrame("Ipsum");
-        //frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        //frame.setLayout(new BorderLayout());
-        //frame.add(mainPanel,BorderLayout.CENTER);      
+    	mainPanel = new JPanel(new GridLayout(1, 1));    	
+    	//Create and set up the window.
+        frame = new JFrame("Ipsum");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLayout(new BorderLayout());
+        frame.add(mainPanel,BorderLayout.CENTER);      
 
         //Display the window.
-        //frame.setPreferredSize(new Dimension(700,700));
-        //frame.pack();
-        //frame.setVisible(true);
-    	
-    	Network network = new Network();
-    	try {
-    		network.run();
-    	} catch (TooManyDendritesException e) {
-    		e.printStackTrace();
-    	}
+        frame.setPreferredSize(new Dimension(500,500));
+        frame.pack();
+        frame.setVisible(true);
+    	  	
+    	mainPanel.add(Visualizer.getInstance().drawGraph());
     }
     
 	public static void main(String[] args) {
@@ -45,8 +37,17 @@ public class Main {
                 createAndShowGUI();
             }
         });
+        
+    	Network network = new Network();
+    	
+    	try {
+    		network.run();
+    	} catch (TooManyDendritesException e) {
+    		e.printStackTrace();
+    	}
     }
 
+	/*
 	public static JPanel getMainPanel() {
 		return mainPanel;
 	}
@@ -58,4 +59,5 @@ public class Main {
 			getMainPanel().add(comp);
 		}
 	}
+	*/
 }

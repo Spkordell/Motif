@@ -76,7 +76,9 @@ public class Network {
 	
 	
 	public void run() throws TooManyDendritesException {
-		ListIterator<AbstractNode> executionIterator = buildNodeExecutionOrder().listIterator();
+		List<AbstractNode> executionList = buildNodeExecutionOrder();
+    	Visualizer.getInstance().updateGraph(executionList);
+		ListIterator<AbstractNode> executionIterator = executionList.listIterator();
 		
 		int index;
     	while (!gis.get(0).isEmpty()) {

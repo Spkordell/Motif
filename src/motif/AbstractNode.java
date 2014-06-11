@@ -1,5 +1,7 @@
 package motif;
 
+import java.awt.Color;
+import java.awt.Paint;
 import java.util.LinkedList;
 
 
@@ -52,5 +54,9 @@ public class AbstractNode {
 
 	public LinkedList<Prediction> getCurrentPredictions(PRM prm) {
 		return new LinkedList<Prediction>();
+	}
+
+	public Paint getVisualizationColor() {
+		return Color.white;
 	}
 }
