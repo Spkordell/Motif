@@ -50,7 +50,7 @@ public class Network {
 	}
 	
 	public void expand() {
-		prms.addAll(makePRMs(4));
+		prms.addAll(makePRMs(6));
 		prms.get(3).connectDendriteTo(prms.get(0));
 		prms.get(3).connectDendriteTo(prms.get(1));
 		
@@ -64,6 +64,12 @@ public class Network {
 		prms.get(6).connectDendriteTo(prms.get(4));
 		prms.get(6).connectDendriteTo(prms.get(5));
 		
+		prms.get(7).connectDendriteTo(prms.get(0));
+		prms.get(7).connectDendriteTo(prms.get(1));
+		prms.get(7).connectDendriteTo(prms.get(2));
+		
+		prms.get(8).connectDendriteTo(prms.get(6));
+		prms.get(8).connectDendriteTo(prms.get(7));
 
 	}
 	
