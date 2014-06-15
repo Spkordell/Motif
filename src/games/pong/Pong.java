@@ -1,14 +1,15 @@
 package games.pong;
-// Pong.java by Paul Falstad, www.falstad.com
-// Copyright (C) 1996 or something
 
-// I had all kinds of problems getting sleep() to work for values less
-// than 50 under Windows, so the frame rate isn't as good as it could be...
-
-import java.awt.*;
 import java.applet.Applet;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Event;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Image;
+import java.awt.Point;
 
-@SuppressWarnings("serial")
 public class Pong extends Applet implements Runnable {
     
     Thread engine = null;
@@ -19,7 +20,7 @@ public class Pong extends Applet implements Runnable {
     Font scoreFont, smallBannerFont, largeBannerFont;
     Image dbimage;
     
-    public static final int defaultPause = 100;
+    public static final int defaultPause = 50;
     int pause;
     
     public String getAppletInfo() {
@@ -28,52 +29,45 @@ public class Pong extends Applet implements Runnable {
 
     public void init() {
 	setBackground(Color.white);
-        @SuppressWarnings("deprecation")
-		Dimension d = winSize = size();
-        paddles = new Paddle[2];
+        Dimension d = winSize = size();
+	paddles = new Paddle[2];
     	paddles[0] = new Paddle(10, 40, 120, 50);
     	paddles[1] = new Paddle(d.width/2, d.height-40, d.height-120, 40);
-		paddles[0].setRange(0, d.width-1);
-		paddles[1].setRange(0, d.width-1);
-		paddles[0].setColorBase(1, 0, 0);
-		paddles[1].setColorBase(0, 0, 1);
-		ball = new Ball(new Point(d.width/2, d.height/2), 9, this);
-		ball.setRange(0, d.width-1, 0, d.height-1);
-		pause = defaultPause;
-		scoreFont = new Font("TimesRoman", Font.BOLD, 36);
-		largeBannerFont = new Font("TimesRoman", Font.BOLD, 48);
-		smallBannerFont = new Font("TimesRoman", Font.BOLD, 16);
-		dbimage = createImage(d.width, d.height);
-		try {
-		    String param = getParameter("PAUSE");
-		    if (param != null)
-			pause = Integer.parseInt(param);
-		} catch (Exception e) { }
-		ball.startPlay();
+	paddles[0].setRange(0, d.width-1);
+	paddles[1].setRange(0, d.width-1);
+	paddles[0].setColorBase(1, 0, 0);
+	paddles[1].setColorBase(0, 0, 1);
+	ball = new Ball(new Point(d.width/2, d.height/2), 9, this);
+	ball.setRange(0, d.width-1, 0, d.height-1);
+	pause = defaultPause;
+	scoreFont = new Font("TimesRoman", Font.BOLD, 36);
+	largeBannerFont = new Font("TimesRoman", Font.BOLD, 48);
+	smallBannerFont = new Font("TimesRoman", Font.BOLD, 16);
+	dbimage = createImage(d.width, d.height);
+	try {
+	    String param = getParameter("PAUSE");
+	    if (param != null)
+		pause = Integer.parseInt(param);
+	} catch (Exception e) { }
     }
 
     public void updateScore(int which) {
-    	paddles[1-which].score++;
-    	ball.startPlay();
+	paddles[1-which].score++;
     }
 
     public void run() {
-		while (true) {
-		    try {
-			for (int i = 0; i != 3; i++)
-			    step();
-			repaint();
-	    	Thread.currentThread();
-			Thread.sleep(pause);
-		    } catch (Exception e) {}
-		}
+	while (true) {
+	    try {
+		for (int i = 0; i != 3; i++)
+		    step();
+		repaint();
+    		Thread.currentThread().sleep(pause);
+	    } catch (Exception e) {}
+	}
     }
 
     public void step() {
-    	//todo: paddles[0].setTarget((int)(paddles[0].getVarPos()+(GOPongFunction.paddle2-GOPongFunction.paddle1)*400));
-    	//todo: GIPongFunction.playerPaddle = paddles[0].getVarPos();
 		paddles[1].setTarget(ball.getPaddlePos());
-		//todo: GIPongFunction.enemyPaddle = (double)ball.getPaddlePos()/400;
 		paddles[0].move();
 		if (ball.inPlay)
 		    paddles[1].move();
@@ -82,9 +76,6 @@ public class Pong extends Applet implements Runnable {
 		if (ball.bounce(paddles[1]))
 		    paddles[1].bounceIt();
 		ball.move();
-		//System.out.println((double)ball.pos.x/400);
-		//todo: GIPongFunction.ballx = (double)ball.pos.x/400;
-		//todo: GIPongFunction.bally = (double)ball.pos.y/400;
     }
 
     public void centerString(Graphics g, FontMetrics fm, String str, int ypos) {
@@ -131,25 +122,22 @@ public class Pong extends Applet implements Runnable {
     }
 
     public void start() {
-		if (engine == null) {
-		    engine = new Thread(this);
-		    engine.start();
-		}
+	if (engine == null) {
+	    engine = new Thread(this);
+	    engine.start();
+	}
     }
 
-    @SuppressWarnings("deprecation")
-	public void stop() {
-		if (engine != null && engine.isAlive()) {
-		    engine.stop();
-		}
-		engine = null;
+    public void stop() {
+	if (engine != null && engine.isAlive()) {
+	    engine.stop();
+	}
+	engine = null;
     }
 
-    @SuppressWarnings("deprecation")
-	public boolean handleEvent(Event evt) {
+    public boolean handleEvent(Event evt) {
 	if (evt.id == Event.MOUSE_MOVE) {
-	    //paddles[0].setTarget(evt.x);
-		//System.out.println(evt.x);
+	    paddles[0].setTarget(evt.x);
 	    return true;
 	} else if (evt.id == Event.MOUSE_DOWN) {
 	    ball.startPlay();
@@ -160,4 +148,5 @@ public class Pong extends Applet implements Runnable {
     }
     
 }
+
 
