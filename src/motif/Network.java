@@ -9,9 +9,19 @@ import java.util.Queue;
 public class Network {
 	private List<PRM> prms;
 	private List<GI> gis;
-	public Network() {
+	
+	private static Network network;
+	
+	private Network() {
 		gis = new ArrayList<GI>();
 		prms = new ArrayList<PRM>();
+	}
+	
+	public static Network getInstance() {
+		if (network == null) {
+			network = new Network();
+		}
+		return network;
 	}
 	
 	/*
@@ -93,22 +103,29 @@ public class Network {
 		ListIterator<AbstractNode> executionIterator = executionList.listIterator();
 		
 		int index;
-    	while (!gis.get(0).isEmpty()) {
+    	//while (!gis.get(0).isEmpty()) {
+		while(true) {
     		index = 1;
     		while (executionIterator.hasNext()) {
-    			System.out.println("====node " + (index++) + "====");
+    			System.out.println("===node " + (index++) + "===");
     			executionIterator.next().stepOne();
     		}    		
     		while (executionIterator.hasPrevious()) {
-    			System.out.println("====node " + (--index) + "====");
+    			System.out.println("===node " + (--index) + "====");
     			executionIterator.previous().stepTwo();
     		}
     	}
     	//Print the predicion for each GI
+		/*
     	int i = 0;
     	for (GI gi : this.gis) {
     		System.out.println("GI "+(i++)+": "+gi.getReturns().getFirst().getCurrentPredictions(gi));
     	}
+    	*/
+	}
+
+	public GI getInput(int i) {
+		return this.gis.get(i);
 	}
 
 }

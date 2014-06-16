@@ -26,6 +26,9 @@ class Paddle extends Bounceable {
     public void setTarget(int x) {
     	targetpos = x-width/2;
     }
+    public int getTarget() {
+    	return targetpos+width/2;
+    }
     public int getVarPos() {
     	return varpos;
     }

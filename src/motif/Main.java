@@ -2,13 +2,9 @@ package motif;
 
 import games.pong.Pong;
 
-import java.awt.*;
-
-import javax.swing.*;
-
 public class Main {
-	private static JFrame frame;
-	private static JPanel mainPanel;
+	//private static JFrame frame;
+	//private static JPanel mainPanel;
 	
     /**
      * Create the GUI and show it.  For thread safety,
@@ -35,19 +31,22 @@ public class Main {
     }
     
     private static Network createNetwork() { 
+    	/*
     	int[] testData1 = {1, 2, 1, 2, 1, 3, 1, 3, 1, 2, 1, 2, 1, 3, 1, 3, 1, 2, 1, 2, 1, 3, 1, 3, 1, 2, 1, 2, 1, 3, 1, 3, 1, 2, 1, 2, 1, 3, 1, 3, 1, 2, 1, 2, 1, 3, 1};
-    	int[] testData2 = {6, 0, 4, 0, 7, 8, 2, 3, 1, 0, 6, 0, 8, 7, 3, 9, 8, 0, 6, 0, 1, 4, 8, 9, 9, 0, 1, 0, 6, 7, 4, 3, 2, 0, 6, 0, 9, 9, 4, 3, 6, 0, 3, 0, 5, 6, 3}; 
+    	int[] testData2 = {6, 0, 4, 0, 7, 8, 2, 3, 1, 0, 6, 0, 8, 7, 3, 9, 8, 0, 6, 0, 1, 4, 8, 9, 9, 0, 1, 0, 6, 7, 4, 3, 2, 0, 6, 0, 9, 9, 4, 3, 6, 0}; 
     	//int[] testData3 = {5, 3, 5, 7, 6, 0, 4, 0, 7, 8, 2, 3, 1, 0, 6, 0, 8, 7, 3, 9, 2, 0, 6, 0, 1, 4, 8, 9, 2, 0, 1, 0, 6, 7, 4, 3, 2, 0, 6, 0, 9, 9, 4, 3, 6, 0, 3};
-	
-    	Network network = new Network();
-    	
-       	network.addInput(new GI()).addData(testData1);
-       	network.addInput(new GI()).addData(testData2);
+	    	
+       	Network.getInstance().addInput(new GI()).addData(testData1);
+       	Network.getInstance().addInput(new GI()).addData(testData2);
        	//network.addInput(new GI()).addData(testData3); 	
+		*/
+    	
+       	Network.getInstance().addInput(new GI());
+       	Network.getInstance().addInput(new GI());
 		
-       	network.expand();
+       	Network.getInstance().expand();
        	
-		return network;
+		return Network.getInstance();
     }
     
 	public static void main(String[] args) {

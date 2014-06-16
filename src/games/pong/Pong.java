@@ -10,6 +10,8 @@ import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.Point;
 
+import motif.Network;
+
 public class Pong extends Applet implements Runnable {
     
     Thread engine = null;
@@ -19,6 +21,9 @@ public class Pong extends Applet implements Runnable {
     Dimension winSize;
     Font scoreFont, smallBannerFont, largeBannerFont;
     Image dbimage;
+    
+    int lastPaddlePostion;
+    int lastBallPosition;
     
     public static final int defaultPause = 50;
     int pause;
@@ -76,6 +81,17 @@ public class Pong extends Applet implements Runnable {
 		if (ball.bounce(paddles[1]))
 		    paddles[1].bounceIt();
 		ball.move();
+		
+		//add data as fast as it can be processed
+		//if (Network.getInstance().getInput(0).isEmpty()) {
+		
+		//add unique values only and only as fast as they can be processed
+		if ((paddles[0].getTarget() != lastPaddlePostion || ball.getPaddlePos() != lastBallPosition) && Network.getInstance().getInput(0).isEmpty()) {
+			Network.getInstance().getInput(0).addData(paddles[0].getTarget());
+			Network.getInstance().getInput(1).addData(ball.getPaddlePos());
+			lastPaddlePostion = paddles[0].getTarget();
+			lastBallPosition = ball.getPaddlePos();
+		}
     }
 
     public void centerString(Graphics g, FontMetrics fm, String str, int ypos) {

@@ -20,6 +20,10 @@ public class GI extends AbstractNode {
 		super();
 		this.data = new LinkedList<Integer>();
 	}
+	
+	public void addData(int item) {
+		this.data.add(item);
+	}
 
 	public void addData(int[] data) {
 		for (int item : data) {
@@ -28,7 +32,11 @@ public class GI extends AbstractNode {
 	}
 	
 	public void stepOne() {
-		this.setAxon(this.data.poll());
+		try {
+			this.setAxon(this.data.poll());
+		} catch (NullPointerException e) {
+			this.setAxon(-1);
+		}
 	}
 	
 	/*
@@ -52,5 +60,5 @@ public class GI extends AbstractNode {
 	public Paint getVisualizationColor() {
 		return Color.green;
 	}
-	
+
 }
