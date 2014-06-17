@@ -61,4 +61,15 @@ public class GI extends AbstractNode {
 		return Color.green;
 	}
 
+	public Prediction getBestPrediction() {
+		float maxConfidence = -1;
+		Prediction bestPrediction = null;
+		for (Prediction prediction : this.getReturns().getFirst().getCurrentPredictions(this)) {
+			if (prediction.getConfidence() > maxConfidence) {
+				maxConfidence = prediction.getConfidence();
+				bestPrediction = prediction;
+			}
+		}
+		return bestPrediction;
+	}
 }

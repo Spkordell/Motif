@@ -73,7 +73,30 @@ public class Pong extends Applet implements Runnable {
 
     public void step() {
 		paddles[1].setTarget(ball.getPaddlePos());
-		paddles[0].move();
+
+		System.out.println("c");
+		
+		if (paddles[0].score >=1) {
+			System.out.println("b");
+			
+			//Network.getInstance().stop();
+			//TODO (for now, just moving to the first item in the prediction list, in the future, will want to perform all maneuvers)
+			String prediction = Network.getInstance().getInput(0).getBestPrediction().getPrediction();
+			System.out.println("d");
+			//while(true) {
+			System.out.println("prediction: "+prediction);
+			System.out.println("e");
+			//}
+			paddles[0].setTarget(Integer.parseInt(prediction.split(" ")[0]));
+			System.out.println("f");
+			paddles[0].move();
+			System.out.println("g");
+
+		} else {
+			paddles[0].move();
+			System.out.println("a");
+		}
+		
 		if (ball.inPlay)
 		    paddles[1].move();
 		if (ball.bounce(paddles[0]))
@@ -82,9 +105,6 @@ public class Pong extends Applet implements Runnable {
 		    paddles[1].bounceIt();
 		ball.move();
 		
-		//add data as fast as it can be processed
-		//if (Network.getInstance().getInput(0).isEmpty()) {
-		
 		//add unique values only and only as fast as they can be processed
 		if ((paddles[0].getTarget() != lastPaddlePostion || ball.getPaddlePos() != lastBallPosition) && Network.getInstance().getInput(0).isEmpty()) {
 			Network.getInstance().getInput(0).addData(paddles[0].getTarget());
@@ -92,6 +112,8 @@ public class Pong extends Applet implements Runnable {
 			lastPaddlePostion = paddles[0].getTarget();
 			lastBallPosition = ball.getPaddlePos();
 		}
+		
+
     }
 
     public void centerString(Graphics g, FontMetrics fm, String str, int ypos) {

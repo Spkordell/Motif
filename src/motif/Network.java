@@ -9,6 +9,7 @@ import java.util.Queue;
 public class Network {
 	private List<PRM> prms;
 	private List<GI> gis;
+	private boolean networkHalted;
 	
 	private static Network network;
 	
@@ -98,20 +99,22 @@ public class Network {
 	}
 
 	public void run() throws TooManyDendritesException {
+		this.networkHalted = false;
+		
 		List<AbstractNode> executionList = buildNodeExecutionOrder();
     	Visualizer.getInstance().updateGraph(executionList);
 		ListIterator<AbstractNode> executionIterator = executionList.listIterator();
 		
 		int index;
     	//while (!gis.get(0).isEmpty()) {
-		while(true) {
+		while(!this.networkHalted) {
     		index = 1;
     		while (executionIterator.hasNext()) {
     			System.out.println("===node " + (index++) + "===");
     			executionIterator.next().stepOne();
     		}    		
     		while (executionIterator.hasPrevious()) {
-    			System.out.println("===node " + (--index) + "====");
+    			System.out.println("===node " + (--index) + "===");
     			executionIterator.previous().stepTwo();
     		}
     	}
@@ -126,6 +129,10 @@ public class Network {
 
 	public GI getInput(int i) {
 		return this.gis.get(i);
+	}
+
+	public void stop() {
+		this.networkHalted = true;
 	}
 
 }
