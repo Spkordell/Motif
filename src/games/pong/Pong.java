@@ -74,24 +74,26 @@ public class Pong extends Applet implements Runnable {
 
     public void step() {
 		paddles[1].setTarget(ball.getPaddlePos());
-		if (paddles[0].score >=1) {
-			
-			
-			
-			//TODO (for now, just moving to the first item in the prediction list, in the future, will want to perform all maneuvers)
-			
-			
-			
-			
-			Prediction prediction = Network.getInstance().getInput(0).getBestPrediction();
-			System.out.println("prediction: "+prediction);
-			if (prediction != null) {
-				paddles[0].setTarget(Integer.parseInt(prediction.getPrediction().split(" ")[0]));
+		if (ball.inPlay) {
+			if (paddles[0].score >=1) {
+				
+				
+				
+				//TODO (for now, just moving to the first item in the prediction list, in the future, will want to perform all maneuvers)
+				
+				
+				
+				
+				Prediction prediction = Network.getInstance().getInput(0).getBestPrediction();
+				System.out.println("prediction: "+prediction);
+				if (prediction != null) {
+					paddles[0].setTarget(Integer.parseInt(prediction.getPrediction().split(" ")[0]));
+					paddles[0].move();
+				}
+			} else {
+				paddles[0].setTarget(0); //TODO: temporarily allowing the game to play itself.
 				paddles[0].move();
 			}
-		} else {
-			paddles[0].setTarget(0); //TODO: temporarily allowing the game to play itself.
-			paddles[0].move();
 		}
 		
 		if (ball.inPlay)
