@@ -26,7 +26,7 @@ public class Pong extends Applet implements Runnable {
     int lastPaddlePostion;
     int lastBallPosition;
     
-    public static final int defaultPause = 50;
+    public static final int defaultPause = 5000;
     int pause;
     
     public String getAppletInfo() {
