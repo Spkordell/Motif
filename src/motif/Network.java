@@ -110,11 +110,11 @@ public class Network {
 		while(!this.networkHalted) {
     		index = 1;
     		while (executionIterator.hasNext()) {
-    			System.out.println("===node " + (index++) + "===");
+    			//System.out.println("===node " + (index++) + "===");
     			executionIterator.next().stepOne();
     		}    		
     		while (executionIterator.hasPrevious()) {
-    			System.out.println("===node " + (--index) + "===");
+    			//System.out.println("===node " + (--index) + "===");
     			executionIterator.previous().stepTwo();
     		}
     	}

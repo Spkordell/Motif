@@ -377,6 +377,7 @@ public class PRM extends AbstractNode {
 			//TODO: can perhaps add error bars if we include the std. dev. of the cluster in the prediciton rather than just the average			
 		} else {
 			return this.currentPredictions;
+
 		}	
 	}
 	

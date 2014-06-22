@@ -65,7 +65,7 @@ public class GI extends AbstractNode {
 		float maxConfidence = -1;
 		Prediction bestPrediction = null;
 		for (Prediction prediction : this.getReturns().getFirst().getCurrentPredictions(this)) {
-			if (prediction.getConfidence() > maxConfidence) {
+			if (prediction.getConfidence() >= maxConfidence) {
 				maxConfidence = prediction.getConfidence();
 				bestPrediction = prediction;
 			}

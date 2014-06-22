@@ -11,6 +11,7 @@ import java.awt.Image;
 import java.awt.Point;
 
 import motif.Network;
+import motif.Prediction;
 
 public class Pong extends Applet implements Runnable {
     
@@ -73,28 +74,24 @@ public class Pong extends Applet implements Runnable {
 
     public void step() {
 		paddles[1].setTarget(ball.getPaddlePos());
-
-		System.out.println("c");
-		
 		if (paddles[0].score >=1) {
-			System.out.println("b");
 			
-			//Network.getInstance().stop();
+			
+			
 			//TODO (for now, just moving to the first item in the prediction list, in the future, will want to perform all maneuvers)
-			String prediction = Network.getInstance().getInput(0).getBestPrediction().getPrediction();
-			System.out.println("d");
-			//while(true) {
+			
+			
+			
+			
+			Prediction prediction = Network.getInstance().getInput(0).getBestPrediction();
 			System.out.println("prediction: "+prediction);
-			System.out.println("e");
-			//}
-			paddles[0].setTarget(Integer.parseInt(prediction.split(" ")[0]));
-			System.out.println("f");
-			paddles[0].move();
-			System.out.println("g");
-
+			if (prediction != null) {
+				paddles[0].setTarget(Integer.parseInt(prediction.getPrediction().split(" ")[0]));
+				paddles[0].move();
+			}
 		} else {
+			paddles[0].setTarget(0); //TODO: temporarily allowing the game to play itself.
 			paddles[0].move();
-			System.out.println("a");
 		}
 		
 		if (ball.inPlay)
@@ -106,13 +103,28 @@ public class Pong extends Applet implements Runnable {
 		ball.move();
 		
 		//add unique values only and only as fast as they can be processed
-		if ((paddles[0].getTarget() != lastPaddlePostion || ball.getPaddlePos() != lastBallPosition) && Network.getInstance().getInput(0).isEmpty()) {
+		//if ((paddles[0].getTarget() != lastPaddlePostion || ball.getPaddlePos() != lastBallPosition) && Network.getInstance().getInput(0).isEmpty()) {
+
+		//add unique values only and only when game is in play
+		/* watch this player
+		if ((paddles[0].getTarget() != lastPaddlePostion && ball.getPaddlePos() != lastBallPosition) && ball.inPlay) {
 			Network.getInstance().getInput(0).addData(paddles[0].getTarget());
 			Network.getInstance().getInput(1).addData(ball.getPaddlePos());
 			lastPaddlePostion = paddles[0].getTarget();
 			lastBallPosition = ball.getPaddlePos();
+		}*/
+		
+		//watch the enemy
+		if ((paddles[1].getTarget() != lastPaddlePostion && ball.getPaddlePos() != lastBallPosition) && ball.inPlay) {
+			Network.getInstance().getInput(0).addData(paddles[1].getTarget());
+			Network.getInstance().getInput(1).addData(ball.getPaddlePos());
+			lastPaddlePostion = paddles[1].getTarget();
+			lastBallPosition = ball.getPaddlePos();
 		}
 		
+		//TODO: Game will auto restart when network catches up and ball is not in play
+		if (!ball.inPlay && Network.getInstance().getInput(0).isEmpty())
+			ball.startPlay();
 
     }
 
